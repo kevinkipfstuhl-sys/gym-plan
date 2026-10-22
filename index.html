@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Gym Plan</title>
+<meta name="description" content="Trainingsplan mit Profilen, Kalender und Fortschritt – komplett offline">
+<meta name="theme-color" content="#0B0C0E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gym Plan">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+/* Gym Plan – dunkles Design mit Lime-Akzent (aus Version 1 übernommen und verfeinert) */
+:root{
+  --bg:#0B0C0E; --surface:#15171B; --surface-2:#1B1E23; --offset:#101216;
+  --border:#262A31; --divider:#202329;
+  --text:#EDEFEA; --muted:#8B9199; --faint:#5F656D;
+  --lime:#C6F527; --lime-strong:#A8D80C; --lime-dim:rgba(198,245,39,.12); --lime-line:rgba(198,245,39,.35);
+  --danger:#FF6B5E; --danger-dim:rgba(255,107,94,.12); --warn:#FFC145; --warn-dim:rgba(255,193,69,.12); --info:#7DB7FF;
+  --on-lime:#10120A;
+  --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --text-xs:12px; --text-sm:14px; --text-base:16px; --text-lg:19px; --text-xl:26px;
+  --font-display:'Clash Display','Satoshi',system-ui,sans-serif;
+  --font-body:'Satoshi','Segoe UI',system-ui,sans-serif;
+  --shadow:0 12px 32px rgba(0,0,0,.45);
+  --nav-h:66px; --maxw:560px;
+  color-scheme:dark;
+}
+@media (min-width:760px){ :root{ --maxw:720px } }
+@media (min-width:1100px){ :root{ --maxw:980px } }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;text-rendering:optimizeLegibility}
+body{
+  min-height:100dvh;background:var(--bg);color:var(--text);
+  font-family:var(--font-body);font-size:var(--text-base);line-height:1.5;
+  padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px));
+  -webkit-tap-highlight-color:transparent;
+}
+img,svg{display:block;max-width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none}
+h1,h2,h3{font-family:var(--font-display);line-height:1.15;text-wrap:balance;font-weight:600}
+::selection{background:rgba(198,245,39,.3)}
+:focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:6px}
+button,.btn,input,select{transition:background .18s,border-color .18s,color .18s,transform .12s,opacity .18s}
+[hidden]{display:none!important}
+
+/* ---------- Kopfzeile ---------- */
+header{
+  position:sticky;top:0;z-index:40;padding-top:env(safe-area-inset-top,0px);
+  background:rgba(11,12,14,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--divider);
+}
+.head-in{max-width:var(--maxw);margin:0 auto;padding:12px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:12px}
+.logo{width:38px;height:38px;border-radius:11px;flex:none}
+.head-txt{min-width:0;flex:1}
+.head-txt h1{font-size:var(--text-lg);letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.head-txt p{font-size:var(--text-xs);color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who{flex:none;display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 12px 4px 4px;max-width:46%}
+.who .av{width:30px;height:30px;border-radius:50%;background:var(--lime);color:var(--on-lime);font-family:var(--font-display);font-weight:600;display:grid;place-items:center;flex:none}
+.who span{font-size:var(--text-sm);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+main{max-width:var(--maxw);margin:0 auto;padding:16px max(16px,env(safe-area-inset-right,0px)) 32px max(16px,env(safe-area-inset-left,0px))}
+
+/* ---------- Bausteine ---------- */
+.view{display:none}
+.view.on{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.view.on{animation:none}*{transition:none!important}}
+.sechead{padding:6px 2px 14px}
+.sechead h2{font-size:var(--text-xl)}
+.sechead p{font-size:var(--text-sm);color:var(--muted);margin-top:4px}
+.sublabel{font-family:var(--font-display);color:var(--muted);font-size:var(--text-sm);font-weight:600;letter-spacing:.6px;text-transform:uppercase;padding:18px 2px 10px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:12px;min-width:0}
+.card h3{font-size:var(--text-base)}
+.muted{color:var(--muted)}
+.small{font-size:var(--text-sm)}
+.xs{font-size:var(--text-xs)}
+.lime{color:var(--lime)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row > .grow{flex:1;min-width:0}
+.stack{display:flex;flex-direction:column;gap:10px}
+.btn{
+  min-height:46px;padding:10px 18px;border-radius:var(--r-sm);background:var(--surface-2);border:1px solid var(--border);
+  font-weight:700;font-size:var(--text-sm);display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center;
+}
+.btn:active{transform:scale(.97)}
+.btn.lime{background:var(--lime);border-color:var(--lime);color:var(--on-lime)}
+.btn.ghost{background:none;border-color:transparent;color:var(--muted)}
+.btn.danger{background:var(--danger-dim);border-color:rgba(255,107,94,.4);color:var(--danger)}
+.btn.block{width:100%}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:var(--text-xs)}
+.btn:disabled{opacity:.35;cursor:default}
+.iconbtn{width:40px;height:40px;border-radius:11px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;color:var(--muted);flex:none}
+.iconbtn svg{width:18px;height:18px}
+.chip{font-size:var(--text-xs);font-weight:500;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.chip b{color:var(--text)}
+.chiprow{display:flex;flex-wrap:wrap;gap:6px}
+.pickchips{display:flex;flex-wrap:wrap;gap:8px}
+.pick{min-height:42px;padding:8px 14px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);font-weight:700;font-size:var(--text-sm);color:var(--muted)}
+.pickchips.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.pickchips.week .pick{padding:8px 0;min-width:0}
+.pick.on{background:var(--lime);border-color:var(--lime);color:var(--on-lime)}
+.optlist{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:flex-start;gap:12px;text-align:left;padding:14px;border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--border)}
+.opt b{display:block;font-size:var(--text-base)}
+.opt span{display:block;font-size:var(--text-sm);color:var(--muted)}
+.opt.on{border-color:var(--lime);background:var(--lime-dim)}
+.opt .dot{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--faint);margin-top:2px}
+.opt.on .dot{border-color:var(--lime);background:radial-gradient(var(--lime) 45%,transparent 50%)}
+label.fld{display:flex;flex-direction:column;gap:6px;font-size:var(--text-sm);color:var(--muted);min-width:0}
+.inp{
+  width:100%;min-height:46px;background:var(--offset);border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:0 14px;font-weight:700;font-size:var(--text-base);color:var(--text);
+}
+.inp:focus{border-color:var(--lime);outline:none}
+select.inp{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 20px,calc(100% - 13px) 20px;background-size:5px 5px;background-repeat:no-repeat;padding-right:34px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.empty{padding:36px 20px;text-align:center;color:var(--muted);font-size:var(--text-sm);border:1px dashed var(--border);border-radius:var(--r-lg)}
+
+/* ---------- Hinweisbanner ---------- */
+.banner{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--lime-line);border-radius:var(--r-lg);padding:14px;margin-bottom:14px}
+.banner.warn{border-color:rgba(255,193,69,.4);background:linear-gradient(180deg,var(--warn-dim),var(--surface) 70%)}
+.banner.info{border-color:rgba(125,183,255,.35)}
+.banner .ico{flex:none;width:38px;height:38px;border-radius:11px;background:var(--lime-dim);display:grid;place-items:center;color:var(--lime)}
+.banner.warn .ico{background:var(--warn-dim);color:var(--warn)}
+.banner.info .ico{background:rgba(125,183,255,.12);color:var(--info)}
+.banner .ico svg{width:20px;height:20px}
+.banner .bt{flex:1;min-width:0}
+.banner .bt b{display:block;font-size:var(--text-base)}
+.banner .bt p{font-size:var(--text-sm);color:var(--muted);margin-top:2px}
+.banner .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.banner .x{flex:none;color:var(--faint);font-size:18px;padding:2px 4px}
+
+/* ---------- Training ---------- */
+.daytabs{display:flex;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:5px;overflow-x:auto;scrollbar-width:none}
+.daytabs::-webkit-scrollbar{display:none}
+.daytabs button{flex:1 0 auto;min-width:64px;padding:10px 12px;border-radius:calc(var(--r-md) - 4px);font-weight:700;font-size:var(--text-sm);color:var(--muted);white-space:nowrap;position:relative}
+.daytabs button.on{background:var(--lime);color:var(--on-lime)}
+.daytabs button.next:not(.on)::after{content:"";position:absolute;top:7px;right:8px;width:6px;height:6px;border-radius:50%;background:var(--lime)}
+.day-meta{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:16px 2px 12px}
+.day-meta h2{font-size:var(--text-xl);min-width:0}
+.day-meta h2 small{display:block;font-family:var(--font-body);font-size:var(--text-sm);color:var(--muted);font-weight:500;margin-top:4px}
+.day-meta .cnt{font-size:var(--text-sm);color:var(--muted);white-space:nowrap;text-align:right;flex:none}
+.day-meta .cnt b{color:var(--lime);font-family:var(--font-display);font-size:var(--text-lg)}
+.progress{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:0 2px 14px}
+.progress i{display:block;height:100%;background:var(--lime);border-radius:99px;transition:width .3s}
+.exlist{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1100px){ .exlist{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start} }
+.excard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;min-width:0}
+.excard.complete{border-color:var(--lime-line)}
+.excard.cardio{background:linear-gradient(180deg,var(--lime-dim),var(--surface) 60%);border-color:var(--lime-line)}
+.excard.compact{padding:12px 14px}
+.ex-head{display:flex;align-items:flex-start;gap:10px}
+.ex-num{flex:none;width:28px;height:28px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font-family:var(--font-display);font-size:var(--text-sm);font-weight:600;display:grid;place-items:center}
+.excard.complete .ex-num{background:var(--lime);border-color:var(--lime);color:var(--on-lime)}
+.ex-title{flex:1;min-width:0}
+.ex-title h3{font-size:var(--text-base);overflow-wrap:anywhere}
+.ex-title .chiprow{margin-top:8px}
+.ex-tag{font-size:var(--text-xs);color:var(--warn);margin-top:6px}
+.wpanel{display:flex;align-items:center;gap:12px;margin-top:14px;padding:10px 12px;background:var(--offset);border:1px solid var(--divider);border-radius:var(--r-md)}
+.wpanel .wbig{font-family:var(--font-display);font-size:30px;font-weight:600;color:var(--lime);line-height:1;white-space:nowrap}
+.wpanel .wbig small{font-size:var(--text-sm);color:var(--muted);font-family:var(--font-body);font-weight:500}
+.wpanel .wsub{font-size:var(--text-xs);color:var(--muted);margin-top:5px;white-space:nowrap}
+.wpanel .wctl{margin-left:auto;display:flex;align-items:center;gap:6px;flex:none}
+.wctl button{width:38px;height:38px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);font-size:20px;display:grid;place-items:center}
+.wctl button:active{transform:scale(.92)}
+.wctl .mval{min-width:56px;text-align:center;font-weight:700;font-size:var(--text-sm);line-height:1.15}
+.wctl .mval small{display:block;font-size:10px;color:var(--faint);font-weight:500;text-transform:uppercase;letter-spacing:.4px}
+.sets{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.setpill{flex:1 1 64px;max-width:120px;min-height:46px;padding:10px 8px;border-radius:var(--r-sm);background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font-weight:700;font-size:var(--text-sm);text-align:center}
+.setpill.done{background:var(--lime);border-color:var(--lime);color:var(--on-lime)}
+.setpill:active{transform:scale(.95)}
+.tip{margin-top:12px;font-size:var(--text-sm);color:var(--lime);font-weight:600;background:var(--lime-dim);border:1px solid var(--lime-line);border-radius:var(--r-sm);padding:9px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tip.warn{color:var(--warn);background:var(--warn-dim);border-color:rgba(255,193,69,.35)}
+.tip .grow{flex:1;min-width:150px}
+.excard .foot{display:flex;gap:8px;margin-top:12px}
+.excard .foot .btn{flex:1;min-height:38px;font-size:var(--text-xs);padding:6px 10px;color:var(--muted)}
+.finish{width:100%;min-height:58px;padding:16px;border-radius:var(--r-lg);background:var(--lime);color:var(--on-lime);font-family:var(--font-display);font-size:var(--text-lg);font-weight:600;margin-top:16px;box-shadow:0 8px 24px rgba(198,245,39,.18)}
+.finish:active{transform:scale(.98)}
+.finish:disabled{opacity:.35;box-shadow:none}
+
+/* ---------- Plan bearbeiten ---------- */
+.planrow{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin-bottom:8px}
+.planrow .nm{flex:1;min-width:0}
+.planrow .nm b{display:block;font-size:var(--text-sm);overflow-wrap:anywhere}
+.planrow .nm span{display:block;font-size:var(--text-xs);color:var(--muted);margin-top:2px}
+.planrow .w{font-family:var(--font-display);color:var(--lime);font-weight:600;white-space:nowrap;text-align:right;font-size:var(--text-base)}
+.planrow .w small{display:block;font-family:var(--font-body);font-size:var(--text-xs);color:var(--muted);font-weight:500}
+.planday{display:flex;align-items:center;gap:10px;padding:18px 2px 10px}
+.planday h3{flex:1;font-size:var(--text-lg);min-width:0}
+.planday h3 small{display:block;font-family:var(--font-body);font-size:var(--text-xs);color:var(--muted);font-weight:500;margin-top:3px}
+
+/* ---------- Kalender ---------- */
+.calhead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.calhead h3{flex:1;text-align:center;font-size:var(--text-lg)}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.calgrid .wd{text-align:center;font-size:var(--text-xs);color:var(--faint);font-weight:700;padding-bottom:2px}
+.cday{aspect-ratio:1/1;min-height:40px;border-radius:12px;background:var(--surface);border:1px solid var(--divider);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:var(--text-sm);color:var(--muted);position:relative;padding:0}
+.cday.planned{border-color:var(--lime-line);color:var(--text)}
+.cday.done{background:var(--lime);border-color:var(--lime);color:var(--on-lime)}
+.cday.skipped{color:var(--faint);text-decoration:line-through;border-style:dashed}
+.cday.missed{border-color:rgba(255,107,94,.45);color:var(--danger)}
+.cday.today{box-shadow:0 0 0 2px var(--text) inset}
+.cday small{font-size:9px;font-weight:600;letter-spacing:.3px;opacity:.85;margin-top:1px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:var(--text-xs);color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-right:5px;border:1px solid var(--border)}
+
+/* ---------- Statistik ---------- */
+.statgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+@media (min-width:760px){ .statgrid{grid-template-columns:repeat(4,minmax(0,1fr))} }
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;min-width:0}
+.stat b{font-family:var(--font-display);font-size:26px;color:var(--lime);display:block;line-height:1.15;white-space:nowrap}
+.stat span{font-size:var(--text-xs);color:var(--muted)}
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--font-body)}
+.prog{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--divider)}
+.prog:last-child{border-bottom:0}
+.prog .nm{flex:1;min-width:0;font-size:var(--text-sm)}
+.prog .nm span{display:block;font-size:var(--text-xs);color:var(--muted)}
+.prog .up{font-family:var(--font-display);font-weight:600;color:var(--lime);white-space:nowrap}
+.prog .up.zero{color:var(--faint)}
+.logitem{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 12px 12px 14px;margin-bottom:8px}
+.logitem .ico{flex:none;width:38px;height:38px;border-radius:11px;background:var(--lime-dim);color:var(--lime);display:grid;place-items:center}
+.logitem .txt{flex:1;min-width:0;text-align:left}
+.logitem .txt b{display:block;font-size:var(--text-base);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logitem .txt span{display:block;font-size:var(--text-xs);color:var(--muted)}
+
+/* ---------- Profil ---------- */
+.pcard{display:flex;align-items:center;gap:14px}
+.pcard .av{width:54px;height:54px;border-radius:50%;background:var(--lime);color:var(--on-lime);font-family:var(--font-display);font-size:24px;font-weight:600;display:grid;place-items:center;flex:none}
+.metric{background:var(--offset);border:1px solid var(--divider);border-radius:var(--r-md);padding:12px 14px;min-width:0}
+.metric b{display:block;font-family:var(--font-display);font-size:22px;color:var(--text);line-height:1.2;white-space:nowrap}
+.metric span{font-size:var(--text-xs);color:var(--muted)}
+.metric em{display:block;font-style:normal;font-size:var(--text-xs);margin-top:2px}
+.scale{position:relative;height:10px;border-radius:99px;background:linear-gradient(90deg,#7DB7FF 0 18%,var(--lime) 18% 50%,var(--warn) 50% 75%,var(--danger) 75%);margin:12px 0 4px}
+.scale i{position:absolute;top:-4px;width:4px;height:18px;border-radius:2px;background:var(--text);box-shadow:0 0 0 2px var(--bg)}
+.whist{display:flex;flex-direction:column}
+.whist > div{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--divider);font-size:var(--text-sm)}
+.whist > div span{flex:1;color:var(--muted)}
+
+/* ---------- Unterseiten (Bottom Sheet) ---------- */
+.sheet-bg{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;animation:fadebg .2s ease}
+@keyframes fadebg{from{opacity:0}to{opacity:1}}
+.sheet{width:100%;max-width:560px;max-height:92dvh;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-bottom:0;border-radius:22px 22px 0 0;padding:10px max(18px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));animation:up .25s cubic-bezier(.16,1,.3,1)}
+@keyframes up{from{transform:translateY(40px);opacity:.5}to{transform:none;opacity:1}}
+@media (min-width:760px){ .sheet-bg{align-items:center} .sheet{border-radius:22px;border-bottom:1px solid var(--border);max-height:86dvh} }
+.sheet .grab{width:40px;height:5px;border-radius:9px;background:var(--border);margin:0 auto 12px}
+.sheet h2{font-size:var(--text-lg);margin-bottom:4px}
+.sheet .sub{font-size:var(--text-sm);color:var(--muted);margin-bottom:14px}
+.sheet .acts{display:flex;gap:10px;margin-top:16px}
+.sheet .acts .btn{flex:1}
+.search{position:sticky;top:-10px;background:var(--surface);padding:6px 0 10px;z-index:2}
+
+/* ---------- Einrichtung ---------- */
+.onb{max-width:520px;margin:0 auto;padding:max(28px,env(safe-area-inset-top,0px)) 18px 40px}
+.onb .steps{display:flex;gap:6px;margin-bottom:22px}
+.onb .steps i{flex:1;height:4px;border-radius:9px;background:var(--surface-2)}
+.onb .steps i.on{background:var(--lime)}
+.onb h1{font-size:28px;margin-bottom:6px}
+.onb .lead{color:var(--muted);margin-bottom:20px}
+.onb .navbtns{display:flex;gap:10px;margin-top:24px}
+.onb .navbtns .btn{flex:1}
+body.onboarding{padding-bottom:0}
+body.onboarding header, body.onboarding nav{display:none}
+
+/* ---------- Navigation unten ---------- */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:40;padding-bottom:env(safe-area-inset-bottom,0px);background:rgba(11,12,14,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--divider)}
+.nav-in{max-width:var(--maxw);margin:0 auto;height:var(--nav-h);display:flex;padding:0 max(4px,env(safe-area-inset-right,0px)) 0 max(4px,env(safe-area-inset-left,0px))}
+.nav-in button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--faint);font-size:11px;font-weight:600}
+.nav-in button.on{color:var(--lime)}
+.nav-in svg{width:22px;height:22px}
+
+/* ---------- Pause-Timer, Toast ---------- */
+#timer{position:fixed;left:50%;bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--surface-2);border:1px solid var(--lime-line);border-radius:999px;padding:8px 8px 8px 18px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);transform:translate(-50%,160%);transition:transform .25s cubic-bezier(.16,1,.3,1);visibility:hidden}
+#timer.show{transform:translate(-50%,0);visibility:visible}
+#timer .t{font-family:var(--font-display);font-size:var(--text-lg);color:var(--lime);min-width:54px;font-variant-numeric:tabular-nums}
+#timer .lb{font-size:var(--text-sm);color:var(--muted)}
+#timer button{white-space:nowrap;border-radius:999px;padding:8px 14px;font-weight:700;font-size:var(--text-sm);background:var(--surface);border:1px solid var(--border)}
+#timer button.lime{background:var(--lime);color:var(--on-lime);border-color:var(--lime)}
+#toast{position:fixed;left:50%;top:calc(76px + env(safe-area-inset-top,0px));z-index:80;transform:translate(-50%,-220%);background:var(--text);color:var(--bg);border-radius:var(--r-md);padding:10px 10px 10px 18px;font-weight:700;font-size:var(--text-sm);box-shadow:var(--shadow);transition:transform .25s cubic-bezier(.16,1,.3,1);display:flex;align-items:center;gap:12px;max-width:calc(100% - 32px);visibility:hidden}
+#toast.show{transform:translate(-50%,0);visibility:visible}
+#toast button{background:var(--bg);color:var(--lime);border-radius:9px;padding:6px 12px;font-weight:700}
+#toast span{padding:4px 8px 4px 0}
+
+</style>
+</head>
+<body>
+<header>
+  <div class="head-in">
+    <img class="logo" src="icons/icon-192.png" alt="">
+    <div class="head-txt"><h1>Gym Plan</h1><p id="headSub"></p></div>
+    <button class="who" id="who" type="button" aria-label="Profil öffnen"></button>
+  </div>
+</header>
+<main id="main"></main>
+<div id="timer" role="timer" aria-live="polite">
+  <span class="t" id="timerT">1:30</span><span class="lb">Pause</span>
+  <button id="timerAdd" type="button">+30 s</button>
+  <button id="timerSkip" class="lime" type="button">Weiter</button>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<nav aria-label="Navigation"><div class="nav-in" id="navIn"></div></nav>
+<script>
+// ---- js/lib.js ----
+// lib.js – Übungsbibliothek und Planvorlagen
+// Übung: n = Name, p = Bewegungsmuster, m = Muskelgruppe, eq = Gerät, k = Art (strength | abs | run | warm)
+//        f = Kraftfaktor innerhalb des Musters (zum Umrechnen beim Tauschen; bei Kurzhanteln pro Hand)
+//        bw = geschätztes Max im Verhältnis zum Körpergewicht (Mann, fortgeschritten) – nur für Startwerte
+//        up = Oberkörper, step = Gewichtsschritt, tags = Hinweise für Alternativen
+(function (G) {
+  'use strict';
+  const GYM = G.GYM = G.GYM || {};
+
+  const L = {};
+  function ex(id, n, p, m, eq, k, f, bw, opts) {
+    L[id] = Object.assign({ id, n, p, m, eq, k, f, bw, up: true, step: eq === 'KH' ? 1 : 2.5, tags: [] }, opts || {});
+  }
+  const LOW = { up: false };
+  // Beine
+  ex('squat', 'Kniebeuge (Langhantel)', 'squat', 'Beine', 'LH', 'strength', 1, 1.0, Object.assign({ compound: true }, LOW));
+  ex('smith_squat', 'Kniebeuge Multipresse', 'squat', 'Beine', 'Maschine', 'strength', 1.05, 1.0, Object.assign({ compound: true, tags: ['geführte Bewegung'] }, LOW));
+  ex('goblet', 'Goblet Squat (Kurzhantel)', 'squat', 'Beine', 'KH', 'strength', 0.35, 0.35, Object.assign({ tags: ['ohne Langhantel', 'rückenschonend'], step: 2 }, LOW));
+  ex('legpress', 'Beinpresse', 'squat', 'Beine', 'Maschine', 'strength', 2.2, 2.2, Object.assign({ compound: true, tags: ['rückenschonend', 'Anfänger'] }, LOW));
+  ex('hack', 'Hackenschmidt-Maschine', 'squat', 'Beine', 'Maschine', 'strength', 1.2, 1.2, Object.assign({ compound: true, tags: ['rückenschonend'] }, LOW));
+  ex('rdl', 'Rumänisches Kreuzheben', 'hinge', 'Beinbeuger/Po', 'LH', 'strength', 1, 0.9, Object.assign({ compound: true }, LOW));
+  ex('db_rdl', 'Rumänisches Kreuzheben Kurzhanteln', 'hinge', 'Beinbeuger/Po', 'KH', 'strength', 0.42, 0.38, Object.assign({ tags: ['ohne Langhantel'] }, LOW));
+  ex('deadlift', 'Kreuzheben', 'hinge', 'Rücken/Beine', 'LH', 'strength', 1.25, 1.2, Object.assign({ compound: true }, LOW));
+  ex('hipthrust', 'Hip Thrust', 'hinge', 'Po', 'LH', 'strength', 1.3, 1.1, Object.assign({ tags: ['rückenschonend'] }, LOW));
+  ex('backext', 'Hyperextensions', 'hinge', 'unterer Rücken/Po', 'Körper', 'strength', 0, 0, Object.assign({ tags: ['ohne Gewicht möglich'] }, LOW));
+  ex('db_lunge', 'Ausfallschritte Kurzhanteln', 'lunge', 'Beine/Po', 'KH', 'strength', 1, 0.16, Object.assign({ step: 2 }, LOW));
+  ex('bulgarian', 'Bulgarian Split Squat', 'lunge', 'Beine/Po', 'KH', 'strength', 0.9, 0.14, Object.assign({ step: 2, tags: ['knieschonend bei sauberer Technik'] }, LOW));
+  ex('stepup', 'Step-ups Kurzhanteln', 'lunge', 'Beine/Po', 'KH', 'strength', 0.85, 0.13, Object.assign({ step: 2, tags: ['knieschonend'] }, LOW));
+  ex('walk_lunge', 'Gehende Ausfallschritte', 'lunge', 'Beine/Po', 'KH', 'strength', 0.9, 0.14, Object.assign({ step: 2 }, LOW));
+  ex('lying_curl', 'Beinbeuger liegend', 'hamcurl', 'Beinbeuger', 'Maschine', 'strength', 1, 0.45, LOW);
+  ex('seated_curl', 'Beinbeuger sitzend', 'hamcurl', 'Beinbeuger', 'Maschine', 'strength', 1.1, 0.5, LOW);
+  ex('leg_ext', 'Beinstrecker', 'legext', 'Oberschenkel vorne', 'Maschine', 'strength', 1, 0.55, LOW);
+  ex('calf_stand', 'Wadenheben stehend', 'calf', 'Waden', 'Maschine', 'strength', 1, 0.7, LOW);
+  ex('calf_press', 'Wadenheben an der Beinpresse', 'calf', 'Waden', 'Maschine', 'strength', 1.3, 0.9, LOW);
+  ex('calf_seated', 'Wadenheben sitzend', 'calf', 'Waden', 'Maschine', 'strength', 0.6, 0.45, LOW);
+  // Brust
+  ex('bench', 'Bankdrücken (Langhantel)', 'hpush', 'Brust', 'LH', 'strength', 1, 0.75, { compound: true });
+  ex('db_bench', 'Kurzhantel-Bankdrücken flach', 'hpush', 'Brust', 'KH', 'strength', 0.42, 0.32, { compound: true, step: 2, tags: ['schulterfreundlicher'] });
+  ex('chest_press', 'Brustpresse (Maschine)', 'hpush', 'Brust', 'Maschine', 'strength', 1, 0.75, { tags: ['geführte Bewegung', 'Anfänger'] });
+  ex('smith_bench', 'Bankdrücken Multipresse', 'hpush', 'Brust', 'Maschine', 'strength', 1.05, 0.78, { tags: ['geführte Bewegung'] });
+  ex('pushup', 'Liegestütze', 'hpush', 'Brust', 'Körper', 'strength', 0, 0, { tags: ['ohne Gerät'] });
+  ex('db_incline', 'Schrägbankdrücken Kurzhanteln', 'ipush', 'obere Brust', 'KH', 'strength', 1, 0.28, { compound: true, step: 2 });
+  ex('incline_bench', 'Schrägbankdrücken Langhantel', 'ipush', 'obere Brust', 'LH', 'strength', 2.3, 0.62, { compound: true });
+  ex('smith_incline', 'Schrägbankdrücken Multipresse', 'ipush', 'obere Brust', 'Maschine', 'strength', 2.4, 0.65, { tags: ['geführte Bewegung'] });
+  ex('cable_fly', 'Kabelzug-Flys', 'fly', 'Brust', 'Kabel', 'strength', 1, 0.2, { tags: ['schulterschonend'] });
+  ex('butterfly', 'Butterfly-Maschine', 'fly', 'Brust', 'Maschine', 'strength', 2.5, 0.5, { tags: ['Anfänger'] });
+  // Schultern
+  ex('db_ohp', 'Schulterdrücken Kurzhanteln', 'vpush', 'Schultern', 'KH', 'strength', 1, 0.2, { compound: true, step: 2 });
+  ex('shoulder_press', 'Schulterpresse (Maschine)', 'vpush', 'Schultern', 'Maschine', 'strength', 2.2, 0.45, { tags: ['geführte Bewegung', 'Anfänger'] });
+  ex('arnold', 'Arnold Press', 'vpush', 'Schultern', 'KH', 'strength', 0.85, 0.17, { step: 2 });
+  ex('ohp', 'Schulterdrücken Langhantel stehend', 'vpush', 'Schultern', 'LH', 'strength', 2.2, 0.5, { compound: true });
+  ex('db_lateral', 'Seitheben Kurzhanteln', 'lateral', 'seitliche Schulter', 'KH', 'strength', 1, 0.1, { step: 1 });
+  ex('cable_lateral', 'Seitheben am Kabel', 'lateral', 'seitliche Schulter', 'Kabel', 'strength', 0.8, 0.08, { tags: ['gleichmäßige Spannung'] });
+  ex('machine_lateral', 'Seitheben-Maschine', 'lateral', 'seitliche Schulter', 'Maschine', 'strength', 2, 0.2, { tags: ['Anfänger'] });
+  ex('facepull', 'Face Pulls am Kabel', 'reardelt', 'hintere Schulter', 'Kabel', 'strength', 1, 0.25, { tags: ['Haltung', 'schulterschonend'] });
+  ex('reverse_fly', 'Reverse Flys Kurzhanteln', 'reardelt', 'hintere Schulter', 'KH', 'strength', 0.35, 0.08, { step: 1 });
+  ex('rear_machine', 'Reverse-Butterfly-Maschine', 'reardelt', 'hintere Schulter', 'Maschine', 'strength', 1.3, 0.3);
+  // Rücken
+  ex('cable_row', 'Rudern am Kabel sitzend', 'hpull', 'oberer Rücken', 'Kabel', 'strength', 1, 0.6, { compound: true });
+  ex('machine_row', 'Rudermaschine', 'hpull', 'oberer Rücken', 'Maschine', 'strength', 1, 0.6, { compound: true, tags: ['rückenschonend', 'Anfänger'] });
+  ex('db_row', 'Einarmiges Kurzhantelrudern', 'hpull', 'oberer Rücken', 'KH', 'strength', 0.5, 0.3, { step: 2, tags: ['ohne Gerät-Warteschlange'] });
+  ex('barbell_row', 'Langhantelrudern vorgebeugt', 'hpull', 'oberer Rücken', 'LH', 'strength', 1.05, 0.62, { compound: true });
+  ex('latpull', 'Latziehen breit', 'vpull', 'Latissimus', 'Kabel', 'strength', 1, 0.65, { compound: true, tags: ['Anfänger'] });
+  ex('latpull_close', 'Latziehen eng', 'vpull', 'Latissimus', 'Kabel', 'strength', 0.95, 0.62, { compound: true });
+  ex('pullup', 'Klimmzüge', 'vpull', 'Latissimus', 'Körper', 'strength', 0, 0, { compound: true, tags: ['Körpergewicht'] });
+  ex('assisted_pullup', 'Assistierte Klimmzüge (Maschine)', 'vpull', 'Latissimus', 'Maschine', 'strength', 0, 0, { tags: ['Anfänger'] });
+  // Arme
+  ex('db_curl', 'Bizepscurls Kurzhanteln', 'biceps', 'Bizeps', 'KH', 'strength', 1, 0.15, { step: 1 });
+  ex('ez_curl', 'SZ-Curls', 'biceps', 'Bizeps', 'LH', 'strength', 2.2, 0.33);
+  ex('cable_curl', 'Bizepscurls am Kabel', 'biceps', 'Bizeps', 'Kabel', 'strength', 1.8, 0.3, { tags: ['gleichmäßige Spannung'] });
+  ex('hammer', 'Hammercurls Kurzhanteln', 'biceps', 'Bizeps/Unterarm', 'KH', 'strength', 1.1, 0.16, { step: 1, tags: ['handgelenkschonend'] });
+  ex('tri_push', 'Trizepsdrücken am Kabel', 'triceps', 'Trizeps', 'Kabel', 'strength', 1, 0.3);
+  ex('rope_push', 'Trizeps-Pushdowns mit Seil', 'triceps', 'Trizeps', 'Kabel', 'strength', 0.9, 0.27, { tags: ['ellenbogenschonend'] });
+  ex('overhead_tri', 'Überkopf-Trizepsstrecken am Kabel', 'triceps', 'Trizeps', 'Kabel', 'strength', 0.85, 0.25);
+  ex('bench_dips', 'Dips an der Bank', 'triceps', 'Trizeps', 'Körper', 'strength', 0, 0, { tags: ['ohne Gerät'] });
+  // Bauch
+  ex('hanging_knee', 'Hanging Knee Raises', 'abs_hip', 'unterer Bauch', 'Körper', 'abs', 0, 0);
+  ex('lying_leg', 'Beinheben liegend', 'abs_hip', 'unterer Bauch', 'Körper', 'abs', 0, 0, { tags: ['einfacher'] });
+  ex('reverse_crunch', 'Reverse Crunch', 'abs_hip', 'unterer Bauch', 'Körper', 'abs', 0, 0, { tags: ['einfacher'] });
+  ex('cable_crunch', 'Cable Crunch', 'abs_flex', 'gerader Bauch', 'Kabel', 'abs', 1, 0.4);
+  ex('crunch', 'Crunches auf der Matte', 'abs_flex', 'gerader Bauch', 'Körper', 'abs', 0, 0, { tags: ['ohne Gerät'] });
+  ex('ab_machine', 'Bauchmaschine', 'abs_flex', 'gerader Bauch', 'Maschine', 'abs', 1, 0.4);
+  ex('plank', 'Plank', 'abs_static', 'Rumpf', 'Körper', 'abs', 0, 0);
+  ex('plank_knees', 'Unterarmstütz auf Knien', 'abs_static', 'Rumpf', 'Körper', 'abs', 0, 0, { tags: ['einfacher'] });
+  ex('side_plank', 'Seitstütz', 'abs_static', 'seitlicher Bauch', 'Körper', 'abs', 0, 0);
+  ex('russian_twist', 'Russian Twists', 'abs_rot', 'seitlicher Bauch', 'Körper', 'abs', 0, 0);
+  ex('woodchop', 'Holzhacker am Kabel', 'abs_rot', 'seitlicher Bauch', 'Kabel', 'abs', 1, 0.2);
+  ex('mountain', 'Mountain Climbers', 'abs_rot', 'Rumpf/Ausdauer', 'Körper', 'abs', 0, 0);
+  // Ausdauer
+  ex('warm_tread', 'Aufwärmen Laufband', 'warm', 'Aufwärmen', 'Cardio', 'warm', 0, 0);
+  ex('warm_cross', 'Aufwärmen Crosstrainer', 'warm', 'Aufwärmen', 'Cardio', 'warm', 0, 0);
+  ex('warm_bike', 'Aufwärmen Fahrrad', 'warm', 'Aufwärmen', 'Cardio', 'warm', 0, 0);
+  ex('tread', 'Laufband', 'cardio', 'Ausdauer', 'Cardio', 'run', 0, 0);
+  ex('cross', 'Crosstrainer', 'cardio', 'Ausdauer', 'Cardio', 'run', 0, 0, { tags: ['gelenkschonend'] });
+  ex('bike', 'Fahrrad-Ergometer', 'cardio', 'Ausdauer', 'Cardio', 'run', 0, 0, { tags: ['gelenkschonend'] });
+  ex('rower', 'Rudergerät', 'cardio', 'Ausdauer', 'Cardio', 'run', 0, 0, { tags: ['Ganzkörper'] });
+  ex('stairs', 'Stepper / Treppe', 'cardio', 'Ausdauer', 'Cardio', 'run', 0, 0);
+
+  const PATTERN_NAMES = { squat: 'Kniebeuge-Muster', hinge: 'Hüftstreckung', lunge: 'Ausfallschritt', hamcurl: 'Beinbeuger', legext: 'Beinstrecker', calf: 'Waden',
+    hpush: 'Drücken horizontal', ipush: 'Drücken schräg', fly: 'Brust-Isolation', vpush: 'Drücken über Kopf', lateral: 'Seitheben', reardelt: 'hintere Schulter',
+    hpull: 'Rudern', vpull: 'Ziehen von oben', biceps: 'Bizeps', triceps: 'Trizeps', abs_hip: 'Bauch (Beine heben)', abs_flex: 'Bauch (Einrollen)',
+    abs_static: 'Rumpf statisch', abs_rot: 'Bauch seitlich', warm: 'Aufwärmen', cardio: 'Ausdauer' };
+  const MUSCLE_GROUPS = ['Beine', 'Brust', 'Rücken', 'Schultern', 'Arme', 'Bauch', 'Ausdauer'];
+  function groupOf(e) {
+    if (['squat', 'hinge', 'lunge', 'hamcurl', 'legext', 'calf'].includes(e.p)) return 'Beine';
+    if (['hpush', 'ipush', 'fly'].includes(e.p)) return 'Brust';
+    if (['hpull', 'vpull'].includes(e.p)) return 'Rücken';
+    if (['vpush', 'lateral', 'reardelt'].includes(e.p)) return 'Schultern';
+    if (['biceps', 'triceps'].includes(e.p)) return 'Arme';
+    if (e.k === 'abs') return 'Bauch';
+    return 'Ausdauer';
+  }
+
+  // ------------------------------------------------------------------
+  // Kevins bisheriger Plan (Di / Do / Sa) – exakt wie in der alten App
+  // ------------------------------------------------------------------
+  const KEVIN_PLAN = [
+    { name: 'Ganzkörper A', title: 'Push + Bauch', ex: [
+      ['warm_tread', 1, '5 min', 0, 0, 0, '5 min locker'],
+      ['squat', 4, '8–10', 120, 60, 0.70, '', 'smith_squat'],
+      ['bench', 4, '8–10', 120, 60, 0.70],
+      ['cable_row', 3, '10–12', 90, 50, 0.70],
+      ['db_ohp', 3, '10–12', 90, 16, 0.70],
+      ['db_lateral', 3, '12–15', 60, 8, 0.60],
+      ['tri_push', 3, '12–15', 60, 25, 0.65],
+      ['hanging_knee', 3, '12–15', 60, 0, 0],
+      ['plank', 3, '45 s', 45, 0, 0],
+      ['tread', 1, '15 min', 0, 0, 0, '5 min locker, 10 min zügig'],
+    ] },
+    { name: 'Ganzkörper B', title: 'Pull + Bauch', ex: [
+      ['warm_tread', 1, '5 min', 0, 0, 0, '5 min locker'],
+      ['rdl', 4, '8–10', 120, 70, 0.70],
+      ['latpull', 4, '8–10', 120, 60, 0.70],
+      ['db_incline', 3, '10–12', 90, 22, 0.70],
+      ['db_lunge', 3, '10/Bein', 90, 14, 0.65],
+      ['facepull', 3, '15', 60, 20, 0.60],
+      ['db_curl', 3, '10–12', 60, 14, 0.70],
+      ['cable_crunch', 3, '12–15', 60, 35, 0.65],
+      ['russian_twist', 3, '20', 45, 0, 0],
+      ['tread', 1, '15 min', 0, 0, 0, 'Intervalle: 1 min schnell, 1 min locker'],
+    ] },
+    { name: 'Ganzkörper C', title: 'Kraft + Definition', ex: [
+      ['warm_tread', 1, '5 min', 0, 0, 0, '5 min locker'],
+      ['legpress', 4, '10–12', 90, 150, 0.70],
+      ['db_bench', 3, '8–10', 90, 26, 0.72],
+      ['latpull_close', 3, '8–10', 90, 55, 0.70],
+      ['arnold', 3, '10–12', 60, 14, 0.70],
+      ['lying_curl', 3, '12–15', 60, 40, 0.65],
+      ['calf_stand', 3, '12–15', 45, 60, 0.65],
+      ['cable_curl', 3, '12', 60, 25, 0.65],
+      ['tri_push', 3, '12', 60, 25, 0.65],
+      ['lying_leg', 3, '15', 45, 0, 0],
+      ['mountain', 3, '30 s', 30, 0, 0],
+      ['tread', 1, '15 min', 0, 0, 0, '5 % Steigung, zügig durchlaufen'],
+    ] },
+  ];
+
+  // ------------------------------------------------------------------
+  // Vorlagen für den Plan-Generator: Bewegungsmuster je Trainingstag
+  // c = Grundübung, a = Ergänzung, abs = Bauch
+  // ------------------------------------------------------------------
+  const SPLITS = {
+    2: [
+      { name: 'Ganzkörper A', title: 'Beine + Drücken', slots: [['squat', 'c'], ['hpush', 'c'], ['hpull', 'c'], ['vpush', 'a'], ['hamcurl', 'a'], ['triceps', 'a'], ['abs_hip', 'abs'], ['abs_static', 'abs']] },
+      { name: 'Ganzkörper B', title: 'Hüfte + Ziehen', slots: [['hinge', 'c'], ['vpull', 'c'], ['ipush', 'c'], ['lunge', 'a'], ['lateral', 'a'], ['biceps', 'a'], ['abs_flex', 'abs'], ['abs_rot', 'abs']] },
+    ],
+    3: [
+      { name: 'Ganzkörper A', title: 'Push + Bauch', slots: [['squat', 'c'], ['hpush', 'c'], ['hpull', 'c'], ['vpush', 'a'], ['lateral', 'a'], ['triceps', 'a'], ['abs_hip', 'abs'], ['abs_static', 'abs']] },
+      { name: 'Ganzkörper B', title: 'Pull + Bauch', slots: [['hinge', 'c'], ['vpull', 'c'], ['ipush', 'c'], ['lunge', 'a'], ['reardelt', 'a'], ['biceps', 'a'], ['abs_flex', 'abs'], ['abs_rot', 'abs']] },
+      { name: 'Ganzkörper C', title: 'Kraft + Definition', slots: [['legpress', 'c'], ['hpush', 'c', 'alt'], ['vpull', 'c', 'alt'], ['vpush', 'a', 'alt'], ['hamcurl', 'a'], ['calf', 'a'], ['biceps', 'a', 'alt'], ['triceps', 'a', 'alt'], ['abs_hip', 'abs', 'alt'], ['abs_rot', 'abs', 'alt']] },
+    ],
+    4: [
+      { name: 'Oberkörper A', title: 'Drücken-Schwerpunkt', slots: [['hpush', 'c'], ['hpull', 'c'], ['vpush', 'c'], ['vpull', 'a'], ['lateral', 'a'], ['triceps', 'a'], ['abs_flex', 'abs']] },
+      { name: 'Unterkörper A', title: 'Kniebeuge-Schwerpunkt', slots: [['squat', 'c'], ['hinge', 'c', 'alt'], ['lunge', 'a'], ['legext', 'a'], ['calf', 'a'], ['abs_hip', 'abs']] },
+      { name: 'Oberkörper B', title: 'Ziehen-Schwerpunkt', slots: [['vpull', 'c'], ['ipush', 'c'], ['hpull', 'c', 'alt'], ['reardelt', 'a'], ['biceps', 'a'], ['fly', 'a'], ['abs_rot', 'abs']] },
+      { name: 'Unterkörper B', title: 'Hüfte-Schwerpunkt', slots: [['hinge', 'c'], ['legpress', 'c'], ['hamcurl', 'a'], ['lunge', 'a', 'alt'], ['calf', 'a', 'alt'], ['abs_static', 'abs']] },
+    ],
+    5: [
+      { name: 'Push', title: 'Brust, Schultern, Trizeps', slots: [['hpush', 'c'], ['ipush', 'c'], ['vpush', 'a'], ['lateral', 'a'], ['triceps', 'a'], ['abs_flex', 'abs']] },
+      { name: 'Pull', title: 'Rücken, Bizeps', slots: [['vpull', 'c'], ['hpull', 'c'], ['reardelt', 'a'], ['biceps', 'a'], ['biceps', 'a', 'alt'], ['abs_hip', 'abs']] },
+      { name: 'Beine', title: 'Beine + Po', slots: [['squat', 'c'], ['hinge', 'c'], ['legext', 'a'], ['hamcurl', 'a'], ['calf', 'a'], ['abs_static', 'abs']] },
+      { name: 'Oberkörper', title: 'Ganzer Oberkörper', slots: [['hpush', 'c', 'alt'], ['hpull', 'c', 'alt'], ['vpush', 'a', 'alt'], ['vpull', 'a', 'alt'], ['triceps', 'a', 'alt'], ['abs_rot', 'abs']] },
+      { name: 'Unterkörper', title: 'Beine + Rumpf', slots: [['legpress', 'c'], ['lunge', 'a'], ['hamcurl', 'a', 'alt'], ['calf', 'a', 'alt'], ['abs_hip', 'abs', 'alt'], ['abs_flex', 'abs', 'alt']] },
+    ],
+  };
+
+  GYM.LIB = L;
+  GYM.PATTERN_NAMES = PATTERN_NAMES;
+  GYM.MUSCLE_GROUPS = MUSCLE_GROUPS;
+  GYM.groupOf = groupOf;
+  GYM.KEVIN_PLAN = KEVIN_PLAN;
+  GYM.SPLITS = SPLITS;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+// ---- js/logic.js ----
+// logic.js – reine Logik ohne Oberfläche: Profile, Plan-Generator, Tauschen, Progression, Kalender, Statistik, Körperwerte
+(function (G) {
+  'use strict';
+  const GYM = G.GYM = G.GYM || {};
+  const L = GYM.LIB;
+
+  // ------------------------------------------------------------------
+  // Hilfsfunktionen Datum (lokale Zeit, Format YYYY-MM-DD)
+  // ------------------------------------------------------------------
+  const pad = n => String(n).padStart(2, '0');
+  const ds = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const parseDs = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12); };
+  const addDays = (s, n) => { const d = parseDs(s); d.setDate(d.getDate() + n); return ds(d); };
+  const today = () => ds(new Date());
+  const weekdayOf = s => parseDs(s).getDay();
+  const diffDays = (a, b) => Math.round((parseDs(b) - parseDs(a)) / 86400000);
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const WD_SHORT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  const WD_LONG = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+
+  // ------------------------------------------------------------------
+  // Ziele und Erfahrung → Satz-/Wiederholungsschema
+  // ------------------------------------------------------------------
+  const GOALS = {
+    definition: { label: 'Definition / Abnehmen', c: { sets: 4, reps: '8–10', rest: 120, pct: 0.70 }, a: { sets: 3, reps: '12–15', rest: 60, pct: 0.62 }, abs: { sets: 3, reps: '12–15', rest: 45 }, cardio: '15 min', cardioInfo: 'zügig, z. B. 5 min locker + 10 min schneller' },
+    muskel: { label: 'Muskelaufbau', c: { sets: 4, reps: '8–10', rest: 120, pct: 0.72 }, a: { sets: 3, reps: '10–12', rest: 75, pct: 0.68 }, abs: { sets: 3, reps: '12–15', rest: 45 }, cardio: '10 min', cardioInfo: 'locker zum Abwärmen' },
+    kraft: { label: 'Kraft', c: { sets: 5, reps: '4–6', rest: 180, pct: 0.82 }, a: { sets: 3, reps: '8–10', rest: 90, pct: 0.70 }, abs: { sets: 3, reps: '10–12', rest: 60 }, cardio: '', cardioInfo: '' },
+    fitness: { label: 'Allgemeine Fitness', c: { sets: 3, reps: '10–12', rest: 90, pct: 0.65 }, a: { sets: 3, reps: '12–15', rest: 60, pct: 0.60 }, abs: { sets: 3, reps: '15', rest: 40 }, cardio: '20 min', cardioInfo: 'Intervalle: 1 min schnell, 1 min locker' },
+  };
+  const LEVELS = {
+    anfaenger: { label: 'Anfänger (unter 6 Monate)', start: 0.6, setDelta: -1, pctDelta: -0.05, preferMachine: true },
+    fortgeschritten: { label: 'Fortgeschritten (6 Monate – 2 Jahre)', start: 1.0, setDelta: 0, pctDelta: 0, preferMachine: false },
+    erfahren: { label: 'Erfahren (über 2 Jahre)', start: 1.3, setDelta: 0, pctDelta: 0.02, preferMachine: false },
+  };
+
+  // geschätztes Startmax für eine Übung
+  function startMax(libId, body, level) {
+    const e = L[libId];
+    if (!e || !e.bw) return 0;
+    const bw = (body && body.weight) || 75;
+    const sex = body && body.sex === 'w' ? (e.up ? 0.55 : 0.72) : 1;
+    const lv = (LEVELS[level] || LEVELS.fortgeschritten).start;
+    return roundTo(bw * e.bw * sex * lv, e.step);
+  }
+  const roundTo = (v, step) => Math.max(0, Math.round(v / step) * step);
+
+  // Übung für ein Bewegungsmuster auswählen
+  function pickExercise(pattern, level, variant, used) {
+    if (L[pattern] && !GYM.PATTERN_NAMES[pattern]) return used.has(pattern) ? null : pattern;   // direkt eine Übung (z. B. legpress)
+    const cands = Object.values(L).filter(e => e.p === pattern && !used.has(e.id));
+    if (!cands.length) return null;
+    const lv = LEVELS[level] || LEVELS.fortgeschritten;
+    const score = e => {
+      let s = 0;
+      if (lv.preferMachine) s += (e.eq === 'Maschine' || e.eq === 'Kabel') ? 3 : e.eq === 'LH' ? -2 : 0;
+      else s += e.compound ? 2 : 0;
+      if (e.eq === 'Körper' && e.k === 'strength') s -= 3;   // Körpergewichtsübungen ohne Gewicht schlechter steuerbar
+      return s;
+    };
+    const sorted = cands.sort((a, b) => score(b) - score(a));
+    return (variant && sorted[1] ? sorted[1] : sorted[0]).id;
+  }
+
+  // Plan aus Profil erzeugen
+  function generatePlan(profile) {
+    const days = Math.min(5, Math.max(2, profile.daysPerWeek || 3));
+    const goal = GOALS[profile.goal] || GOALS.definition;
+    const lv = LEVELS[profile.level] || LEVELS.fortgeschritten;
+    const plan = { days: [] };
+    const maxes = {}, pcts = {};
+    for (const tpl of GYM.SPLITS[days]) {
+      const used = new Set();
+      const day = { id: uid(), name: tpl.name, title: tpl.title, ex: [] };
+      if (goal.cardio) day.ex.push(mkEx('warm_tread', 1, '5 min', 0, '5 min locker'));
+      for (const [pat, role, variant] of tpl.slots) {
+        const lib = pickExercise(pat, profile.level, !!variant, used);
+        if (!lib) continue;
+        used.add(lib);
+        const sch = role === 'c' ? goal.c : role === 'a' ? goal.a : goal.abs;
+        let sets = Math.max(2, sch.sets + (role === 'abs' ? 0 : lv.setDelta));
+        const reps = L[lib].p === 'abs_static' ? (profile.level === 'anfaenger' ? '30 s' : '45 s') : L[lib].p === 'lunge' ? sch.reps + '/Bein' : sch.reps;
+        const inst = mkEx(lib, sets, reps, sch.rest, '');
+        day.ex.push(inst);
+        if (L[lib].bw && sch.pct) { maxes[inst.id] = startMax(lib, profile.body, profile.level); pcts[inst.id] = Math.round((sch.pct + lv.pctDelta) * 100) / 100; }
+      }
+      if (goal.cardio) day.ex.push(mkEx('tread', 1, goal.cardio, 0, goal.cardioInfo));
+      plan.days.push(day);
+    }
+    return { plan, maxes, pcts };
+  }
+  function mkEx(lib, sets, reps, rest, info) { return { id: uid(), lib, sets, reps, rest, info: info || '' }; }
+
+  function kevinPlan() {
+    const plan = { days: [] }, maxes = {}, pcts = {};
+    for (const d of GYM.KEVIN_PLAN) {
+      const day = { id: uid(), name: d.name, title: d.title, ex: [] };
+      for (const [lib, sets, reps, rest, max, pct, info] of d.ex) {
+        const inst = mkEx(lib, sets, reps, rest, info);
+        day.ex.push(inst);
+        if (max > 0) { maxes[inst.id] = max; pcts[inst.id] = pct; }
+      }
+      plan.days.push(day);
+    }
+    return { plan, maxes, pcts };
+  }
+
+  // ------------------------------------------------------------------
+  // Profil anlegen
+  // ------------------------------------------------------------------
+  function createProfile(o) {
+    const p = {
+      id: uid(), name: o.name || 'Profil', created: today(),
+      goal: o.goal || 'definition', level: o.level || 'fortgeschritten',
+      daysPerWeek: o.weekdays ? o.weekdays.length : 3, weekdays: o.weekdays || [2, 4, 6],
+      body: Object.assign({ sex: 'm', birthYear: null, height: null, weight: null, waist: null, target: null }, o.body || {}),
+      weights: [], reminder: { time: '18:00', enabled: true },
+      plan: null, maxes: {}, pcts: {}, maxHist: {}, done: {}, todaySwap: {}, logs: [], sched: { skip: {}, extra: {} },
+      prog: {}, deload: null, rotationStart: today(), dismissed: {},
+    };
+    p.daysPerWeek = p.weekdays.length;
+    const gen = o.template === 'kevin' ? kevinPlan() : generatePlan(p);
+    p.plan = gen.plan; p.maxes = gen.maxes; p.pcts = gen.pcts;
+    for (const [k, v] of Object.entries(p.maxes)) p.maxHist[k] = [{ d: today(), kg: v }];
+    if (p.body.weight) p.weights.push({ d: today(), kg: p.body.weight });
+    return p;
+  }
+
+  // ------------------------------------------------------------------
+  // Gewichte
+  // ------------------------------------------------------------------
+  const exLib = inst => L[inst.lib] || { n: inst.lib, k: 'strength', p: '', f: 0, step: 2.5 };
+  const maxOf = (p, inst) => p.maxes[inst.id] || 0;
+  function pctOf(p, inst) {
+    const base = p.pcts[inst.id] || 0;
+    if (p.deload && p.deload.until >= today()) return Math.max(0.3, base - 0.1);
+    return base;
+  }
+  function workWeight(p, inst) {
+    const e = exLib(inst);
+    const raw = maxOf(p, inst) * pctOf(p, inst);
+    const step = e.eq === 'KH' ? 0.5 : 0.25;
+    return Math.round(raw / step) * step;
+  }
+  function setMax(p, instId, kg) {
+    p.maxes[instId] = kg;
+    const h = p.maxHist[instId] = p.maxHist[instId] || [];
+    const last = h[h.length - 1];
+    if (last && last.d === today()) last.kg = kg; else h.push({ d: today(), kg });
+  }
+  // Max aus Testsatz (Epley): Gewicht × (1 + Wdh/30)
+  const estimateMax = (kg, reps) => (reps <= 1 ? kg : kg * (1 + reps / 30));
+
+  // ------------------------------------------------------------------
+  // Übung tauschen: Alternativen mit Begründung, Gewicht umrechnen
+  // ------------------------------------------------------------------
+  function alternatives(libId) {
+    const e = L[libId];
+    if (!e) return [];
+    return Object.values(L).filter(x => x.id !== libId && x.p === e.p).map(x => {
+      const why = [];
+      if (x.eq !== e.eq) why.push(x.eq === 'Maschine' ? 'Maschine statt ' + eqName(e.eq) : x.eq === 'Kabel' ? 'am Kabelzug' : x.eq === 'KH' ? 'mit Kurzhanteln' : x.eq === 'Körper' ? 'ohne Gewicht/Gerät' : 'mit ' + eqName(x.eq));
+      x.tags.forEach(t => why.push(t));
+      if (x.compound && !e.compound) why.push('mehr Muskeln beteiligt');
+      if (!x.compound && e.compound) why.push('gezielter, weniger belastend');
+      return { id: x.id, n: x.n, why: Array.from(new Set(why)) };
+    }).sort((a, b) => b.why.length - a.why.length);
+  }
+  const eqName = q => ({ LH: 'Langhantel', KH: 'Kurzhantel', Maschine: 'Maschine', Kabel: 'Kabel', 'Körper': 'Körpergewicht', Cardio: 'Cardio' })[q] || q;
+  function convertMax(fromLib, toLib, kg) {
+    const a = L[fromLib], b = L[toLib];
+    if (!a || !b || !a.f || !b.f || !kg) return b && b.f ? 0 : 0;
+    return roundTo(kg * b.f / a.f, b.step);
+  }
+  // dauerhaft tauschen (im Plan)
+  function swapExercise(p, dayId, instId, toLib) {
+    const day = p.plan.days.find(d => d.id === dayId);
+    const inst = day && day.ex.find(x => x.id === instId);
+    if (!inst) return;
+    const newMax = convertMax(inst.lib, toLib, maxOf(p, inst));
+    const fromLib = inst.lib;
+    inst.lib = toLib;
+    if (L[toLib].f) {
+      setMax(p, instId, newMax || startMax(toLib, p.body, p.level));
+      if (!p.pcts[instId]) p.pcts[instId] = 0.65;
+    } else { delete p.maxes[instId]; }
+    delete (p.prog || {})[instId];
+    return { fromLib, toLib, max: p.maxes[instId] || 0 };
+  }
+
+  // ------------------------------------------------------------------
+  // Progression nach dem Training
+  // ------------------------------------------------------------------
+  // allDone: alle Sätze erledigt. Ergebnis: Vorschläge
+  function evaluateProgress(p, day, doneMap) {
+    const tips = [];
+    p.prog = p.prog || {};
+    for (const inst of day.ex) {
+      const e = exLib(inst);
+      if (e.k !== 'strength' || !maxOf(p, inst)) continue;
+      const done = (doneMap[inst.id] || []).filter(Boolean).length;
+      const st = p.prog[inst.id] = p.prog[inst.id] || { clean: 0, stall: 0 };
+      if (done >= inst.sets) { st.clean++; st.stall = 0; }
+      else if (done > 0) { st.stall++; st.clean = 0; }
+      if (st.clean >= 2) tips.push({ type: 'up', instId: inst.id, dayId: day.id, n: e.n, add: e.eq === 'KH' ? 1 : 2.5 });
+      else if (st.stall >= 3) tips.push({ type: 'stall', instId: inst.id, dayId: day.id, n: e.n });
+    }
+    return tips;
+  }
+  function acceptIncrease(p, instId, add) {
+    setMax(p, instId, Math.round(((p.maxes[instId] || 0) + add) * 100) / 100);
+    if (p.prog[instId]) p.prog[instId].clean = 0;
+  }
+  function startDeload(p) { p.deload = { from: today(), until: addDays(today(), 6) }; Object.values(p.prog || {}).forEach(s => { s.stall = 0; }); }
+
+  // Abwechslung nach 6–8 Wochen: Ergänzungsübungen tauschen
+  function variationDue(p) { return diffDays(p.rotationStart || p.created, today()) >= 49; }
+  function variationSuggestions(p) {
+    const out = [];
+    for (const day of p.plan.days) for (const inst of day.ex) {
+      const e = exLib(inst);
+      if (e.k !== 'strength' || e.compound) continue;
+      const alt = alternatives(inst.lib).find(a => L[a.id].eq !== 'Körper' && !day.ex.some(x => x.lib === a.id));
+      if (alt) out.push({ dayId: day.id, instId: inst.id, from: e.n, to: alt.id, toName: alt.n, why: alt.why[0] || '' });
+    }
+    return out;
+  }
+
+  // ------------------------------------------------------------------
+  // Kalender und Verschieben
+  // ------------------------------------------------------------------
+  const loggedOn = (p, s) => p.logs.some(l => l.d === s);
+  function isPlanned(p, s) {
+    if (p.sched.extra[s]) return true;
+    if (p.sched.skip[s]) return false;
+    return p.weekdays.includes(weekdayOf(s));
+  }
+  // Nächste Einheit in der Reihenfolge (unabhängig vom Wochentag)
+  function nextDay(p) {
+    const days = p.plan.days;
+    if (!days.length) return null;
+    const last = p.logs.find(l => days.some(d => d.id === l.dayId));
+    if (!last) return days[0];
+    const i = days.findIndex(d => d.id === last.dayId);
+    return days[(i + 1) % days.length];
+  }
+  // Status für heute: done | due | rest-suggested | catchup | rest
+  function todayStatus(p, s) {
+    s = s || today();
+    const y = addDays(s, -1);
+    if (loggedOn(p, s)) return { state: 'done' };
+    const planned = isPlanned(p, s);
+    if (planned && loggedOn(p, y) && !p.dismissed['rest:' + s]) return { state: 'rest-suggested', planned: true };
+    if (planned) return { state: 'due', planned: true };
+    // gestern geplant, aber nicht trainiert und nicht abgesagt → nachholen
+    if (p.weekdays.includes(weekdayOf(y)) && !p.sched.skip[y] && !loggedOn(p, y) && !p.dismissed['catchup:' + s] && diffDays(p.created, y) >= 0) return { state: 'catchup' };
+    return { state: 'rest' };
+  }
+  function skipDay(p, s, reason) { p.sched.skip[s] = reason || 'ausgefallen'; delete p.sched.extra[s]; }
+  function moveDay(p, s, to) { skipDay(p, s, 'verschoben'); p.sched.extra[to] = true; }
+  function unskip(p, s) { delete p.sched.skip[s]; }
+  // nächster geplanter Termin ab Datum (inklusive)
+  function nextPlannedDate(p, s) {
+    for (let i = 0; i < 21; i++) { const d = addDays(s, i); if (isPlanned(p, d) && !loggedOn(p, d)) return d; }
+    return null;
+  }
+  // Monatsraster
+  function monthGrid(p, year, month) {
+    const first = new Date(year, month, 1, 12);
+    const startOffset = (first.getDay() + 6) % 7;
+    const days = new Date(year, month + 1, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < startOffset; i++) cells.push(null);
+    const t = today();
+    for (let d = 1; d <= days; d++) {
+      const s = ds(new Date(year, month, d, 12));
+      const log = p.logs.find(l => l.d === s);
+      let state = 'none';
+      if (log) state = 'done';
+      else if (p.sched.skip[s] && p.weekdays.includes(weekdayOf(s))) state = 'skipped';
+      else if (isPlanned(p, s)) state = s < t ? (s >= p.created ? 'missed' : 'none') : 'planned';
+      cells.push({ d, s, state, today: s === t, log, reason: p.sched.skip[s] || '' });
+    }
+    return cells;
+  }
+
+  // ------------------------------------------------------------------
+  // Erinnerungen als Kalenderdatei (.ics, wöchentlich wiederkehrend)
+  // ------------------------------------------------------------------
+  function buildICS(p) {
+    const BY = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+    const [hh, mm] = (p.reminder.time || '18:00').split(':').map(Number);
+    let s = today();
+    while (!p.weekdays.includes(weekdayOf(s))) s = addDays(s, 1);
+    const dt = s.replace(/-/g, '') + 'T' + pad(hh) + pad(mm) + '00';
+    const endH = hh + 1;
+    const dtEnd = s.replace(/-/g, '') + 'T' + pad(endH % 24) + pad(mm) + '00';
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Gym Plan//DE', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+      'BEGIN:VEVENT', 'UID:gymplan-' + p.id + '@gymplan', 'DTSTAMP:' + stamp, 'DTSTART:' + dt, 'DTEND:' + dtEnd,
+      'RRULE:FREQ=WEEKLY;BYDAY=' + p.weekdays.slice().sort().map(w => BY[w]).join(','),
+      'SUMMARY:Training – Gym Plan', 'DESCRIPTION:Heute ist Training. Öffne Gym Plan für deinen Tagesplan.',
+      'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Training um ' + pad(hh) + ':' + pad(mm) + ' Uhr', 'TRIGGER:PT0M', 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR'];
+    return lines.join('\r\n') + '\r\n';
+  }
+
+  // ------------------------------------------------------------------
+  // Training abschließen → Protokoll
+  // ------------------------------------------------------------------
+  const midReps = reps => { const m = String(reps).match(/(\d+)(?:\s*[–\-/]\s*(\d+))?/); if (!m) return 0; return m[2] ? (+m[1] + +m[2]) / 2 : +m[1]; };
+  function finishSession(p, day, doneMap, dateStr) {
+    let sets = 0, vol = 0;
+    const ex = [];
+    for (const inst of day.ex) {
+      const n = (doneMap[inst.id] || []).filter(Boolean).length;
+      if (!n) continue;
+      sets += n;
+      const w = exLib(inst).k === 'strength' || exLib(inst).k === 'abs' ? workWeight(p, inst) : 0;
+      const r = midReps(inst.reps);
+      if (w && r && !/s$|min/.test(inst.reps)) vol += n * w * r * (exLib(inst).eq === 'KH' ? 2 : 1);
+      ex.push({ id: inst.id, lib: inst.lib, sets: n, of: inst.sets, w });
+    }
+    const log = { id: uid(), d: dateStr || today(), dayId: day.id, dayName: day.name, sets, vol: Math.round(vol), ex };
+    p.logs.unshift(log);
+    p.logs.sort((a, b) => (a.d < b.d ? 1 : a.d > b.d ? -1 : 0));
+    return log;
+  }
+
+  // ------------------------------------------------------------------
+  // Statistik
+  // ------------------------------------------------------------------
+  function mondayOf(s) { const d = parseDs(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return ds(d); }
+  function weeklyStats(p, weeks) {
+    weeks = weeks || 8;
+    const thisMon = mondayOf(today());
+    const out = [];
+    for (let i = weeks - 1; i >= 0; i--) {
+      const mon = addDays(thisMon, -7 * i), sun = addDays(mon, 6);
+      const logs = p.logs.filter(l => l.d >= mon && l.d <= sun);
+      out.push({ mon, sessions: logs.length, sets: logs.reduce((a, l) => a + l.sets, 0), vol: logs.reduce((a, l) => a + l.vol, 0) });
+    }
+    const prev = out.slice(0, -1).filter(w => w.sessions);
+    const avgVol = prev.length ? prev.reduce((a, w) => a + w.vol, 0) / prev.length : 0;
+    const cur = out[out.length - 1];
+    return { weeks: out, current: cur, avgVol, intensity: avgVol ? cur.vol / avgVol : null };
+  }
+  function progressions(p) {
+    const out = [];
+    for (const day of p.plan.days) for (const inst of day.ex) {
+      const h = p.maxHist[inst.id];
+      if (!h || h.length < 1 || !p.maxes[inst.id]) continue;
+      const first = h[0].kg, now = p.maxes[inst.id];
+      if (!first) continue;
+      out.push({ n: exLib(inst).n, first, now, diff: Math.round((now - first) * 100) / 100, pct: (now - first) / first, since: h[0].d });
+    }
+    return out.sort((a, b) => b.pct - a.pct);
+  }
+  function streakWeeks(p) {
+    // aufeinanderfolgende Wochen mit mindestens der geplanten Anzahl Trainings (aktuelle Woche zählt, wenn erreicht)
+    let n = 0, mon = mondayOf(today());
+    const need = Math.max(1, p.weekdays.length);
+    const count = m => p.logs.filter(l => l.d >= m && l.d <= addDays(m, 6)).length;
+    if (count(mon) >= need) n++;
+    for (let i = 1; i < 104; i++) { const m = addDays(mon, -7 * i); if (count(m) >= need) n++; else break; }
+    return n;
+  }
+
+  // ------------------------------------------------------------------
+  // Körperwerte (nur im Profil)
+  // ------------------------------------------------------------------
+  function bodyMetrics(p) {
+    const b = p.body || {};
+    const w = p.weights.length ? p.weights[p.weights.length - 1].kg : b.weight;
+    const h = b.height;
+    const age = b.birthYear ? new Date().getFullYear() - b.birthYear : null;
+    const res = { weight: w, age };
+    if (w && h) {
+      const m = h / 100;
+      res.bmi = w / (m * m);
+      res.bmiCat = res.bmi < 18.5 ? 'Untergewicht' : res.bmi < 25 ? 'Normalgewicht' : res.bmi < 30 ? 'Übergewicht' : 'Adipositas';
+      res.healthy = [18.5 * m * m, 24.9 * m * m];
+      if (age && age >= 65) res.healthy = [22 * m * m, 26.9 * m * m];
+    }
+    if (b.waist && h) { res.whtr = b.waist / h; res.whtrCat = res.whtr < 0.4 ? 'sehr schlank' : res.whtr <= (age && age > 50 ? 0.55 : 0.5) ? 'gesund' : res.whtr < 0.6 ? 'erhöht' : 'deutlich erhöht'; }
+    if (w && h && age) {
+      res.bmr = 10 * w + 6.25 * h - 5 * age + (b.sex === 'w' ? -161 : 5);
+      const f = p.weekdays.length >= 4 ? 1.55 : p.weekdays.length >= 2 ? 1.4 : 1.25;
+      res.tdee = res.bmr * f;
+      res.goalKcal = p.goal === 'definition' ? res.tdee - 400 : p.goal === 'muskel' ? res.tdee + 250 : res.tdee;
+    }
+    if (p.weights.length) {
+      const first = p.weights[0];
+      res.start = first.kg; res.startDate = first.d;
+      res.change = Math.round((w - first.kg) * 10) / 10;
+    }
+    if (b.target && w) res.toTarget = Math.round((w - b.target) * 10) / 10;
+    return res;
+  }
+
+  // ------------------------------------------------------------------
+  // Backup prüfen
+  // ------------------------------------------------------------------
+  function validateBackup(o) {
+    if (!o || typeof o !== 'object' || o.app !== 'gymplan' || !o.profiles || typeof o.profiles !== 'object') throw new Error('Das ist keine gültige Gym-Plan-Sicherung.');
+    for (const p of Object.values(o.profiles)) {
+      if (!p.id || !p.plan || !Array.isArray(p.plan.days) || !Array.isArray(p.logs)) throw new Error('Die Sicherung ist beschädigt (Profil unvollständig).');
+      for (const d of p.plan.days) for (const e of d.ex) if (typeof e.lib !== 'string' || !(e.sets >= 1 && e.sets <= 12)) throw new Error('Die Sicherung enthält ungültige Übungen.');
+    }
+    return true;
+  }
+
+  Object.assign(GYM, { ds, parseDs, addDays, today, weekdayOf, diffDays, uid, WD_SHORT, WD_LONG, GOALS, LEVELS, startMax, roundTo, generatePlan, kevinPlan, createProfile, mkEx,
+    exLib, maxOf, pctOf, workWeight, setMax, estimateMax, alternatives, convertMax, swapExercise, evaluateProgress, acceptIncrease, startDeload, variationDue, variationSuggestions,
+    isPlanned, nextDay, todayStatus, skipDay, moveDay, unskip, nextPlannedDate, monthGrid, buildICS, midReps, finishSession, weeklyStats, progressions, streakWeeks, bodyMetrics, validateBackup, mondayOf, eqName });
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+// ---- js/store.js ----
+// store.js – lokaler Speicher (nur auf dem Gerät), mehrere Profile, Sicherung
+(function (G) {
+  'use strict';
+  const GYM = G.GYM = G.GYM || {};
+  const KEY = 'gymplan_v2';
+  const mem = {};
+  let ls = null;
+  try { const t = window.localStorage; t.setItem('__t', '1'); t.removeItem('__t'); ls = t; } catch (e) { ls = null; }
+  const raw = {
+    get(k) { try { return ls ? ls.getItem(k) : (mem[k] || null); } catch (e) { return mem[k] || null; } },
+    set(k, v) { mem[k] = v; try { if (ls) ls.setItem(k, v); } catch (e) { /* Speicher voll oder gesperrt */ } },
+  };
+
+  function load() {
+    try {
+      const s = JSON.parse(raw.get(KEY) || 'null');
+      if (s && s.profiles) return s;
+    } catch (e) { /* defekte Daten → neu beginnen */ }
+    return { app: 'gymplan', version: 2, active: null, profiles: {}, ui: {} };
+  }
+  const S = load();
+  function save() {
+    raw.set(KEY, JSON.stringify(S));
+    mirrorForReminder();
+    // dauerhaften Speicher anfragen, damit der Browser die Daten nicht aufräumt
+    if (!save.asked && navigator.storage && navigator.storage.persist) { save.asked = true; navigator.storage.persist().catch(() => {}); }
+  }
+  const P = () => S.profiles[S.active] || null;
+  function addProfile(p) { S.profiles[p.id] = p; S.active = p.id; save(); }
+  function removeProfile(id) {
+    delete S.profiles[id];
+    if (S.active === id) S.active = Object.keys(S.profiles)[0] || null;
+    save();
+  }
+  function exportBackup() { return JSON.stringify({ app: 'gymplan', version: 2, exported: new Date().toISOString(), profiles: S.profiles, active: S.active }, null, 1); }
+  function importBackup(text) {
+    const o = JSON.parse(text);
+    GYM.validateBackup(o);
+    for (const [id, p] of Object.entries(o.profiles)) S.profiles[id] = p;
+    if (!S.active || !S.profiles[S.active]) S.active = o.active && S.profiles[o.active] ? o.active : Object.keys(S.profiles)[0];
+    save();
+    return Object.keys(o.profiles).length;
+  }
+
+  // Kopie der Erinnerungsdaten in IndexedDB, damit der Service Worker sie lesen kann
+  function mirrorForReminder() {
+    try {
+      const p = P();
+      if (!p || !('indexedDB' in window)) return;
+      const req = indexedDB.open('gymplan', 1);
+      req.onupgradeneeded = () => req.result.createObjectStore('kv');
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('kv', 'readwrite');
+        tx.objectStore('kv').put({ name: p.name, weekdays: p.weekdays, time: p.reminder.time, enabled: p.reminder.enabled, skip: p.sched.skip, extra: p.sched.extra, logs: p.logs.slice(0, 3).map(l => l.d), notified: (S.ui.notified || '') }, 'reminder');
+        tx.oncomplete = () => db.close();
+      };
+    } catch (e) { /* optional */ }
+  }
+
+  GYM.store = { S, save, P, addProfile, removeProfile, exportBackup, importBackup, persistent: !!ls };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+// ---- js/ui.js ----
+// ui.js – kleine Helfer: Elemente, Toast mit Rückgängig, Bottom-Sheets, Bestätigung, Pausentimer
+(function (G) {
+  'use strict';
+  const GYM = G.GYM = G.GYM || {};
+
+  function h(tag, attrs, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v === undefined || v === null || v === false) continue;
+      if (k === 'html') el.innerHTML = v;
+      else if (k === 'text') el.textContent = v;
+      else if (k === 'class') el.className = v;
+      else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+      else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+      else if (k === 'value') el.value = v;
+      else el.setAttribute(k, v === true ? '' : v);
+    }
+    for (const c of kids.flat()) if (c !== null && c !== undefined && c !== false) el.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c);
+    return el;
+  }
+  const $ = (s, r) => (r || document).querySelector(s);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const kg = x => (Math.round(x * 100) / 100).toLocaleString('de-DE');
+  const dateLong = s => GYM.parseDs(s).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+  const dateShort = s => GYM.parseDs(s).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  const ICON = {
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+    cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="3"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/></svg>',
+    bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+    moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+    up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>',
+    swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
+    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg>',
+    left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+    right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+    upArrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>',
+    downArrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  };
+
+  // Toast, optional mit Aktion (z. B. Rückgängig)
+  let toastT = null;
+  function toast(msg, action) {
+    const t = $('#toast');
+    t.innerHTML = '';
+    t.appendChild(h('span', { text: msg }));
+    if (action) t.appendChild(h('button', { type: 'button', text: action.label, onclick: () => { clearTimeout(toastT); t.classList.remove('show'); action.fn(); } }));
+    t.classList.add('show');
+    clearTimeout(toastT);
+    toastT = setTimeout(() => t.classList.remove('show'), action ? 6000 : 2600);
+  }
+
+  // Bottom-Sheet
+  function sheet(build) {
+    const bg = h('div', { class: 'sheet-bg', role: 'dialog', 'aria-modal': 'true' });
+    const sh = h('div', { class: 'sheet' }, h('div', { class: 'grab' }));
+    bg.appendChild(sh);
+    const close = () => { bg.remove(); document.removeEventListener('keydown', onKey); };
+    const onKey = e => { if (e.key === 'Escape') close(); };
+    bg.addEventListener('click', e => { if (e.target === bg) close(); });
+    document.addEventListener('keydown', onKey);
+    build(sh, close);
+    document.body.appendChild(bg);
+    const f = sh.querySelector('input,select,button:not(.x)');
+    if (f && f.tagName !== 'BUTTON') setTimeout(() => f.focus(), 60);
+    return close;
+  }
+  function confirmSheet(title, text, okLabel, danger, onOk) {
+    sheet((sh, close) => {
+      sh.append(h('h2', { text: title }), h('p', { class: 'sub', text }),
+        h('div', { class: 'acts' }, h('button', { class: 'btn', type: 'button', text: 'Abbrechen', onclick: close }),
+          h('button', { class: 'btn ' + (danger ? 'danger' : 'lime'), type: 'button', text: okLabel, onclick: () => { close(); onOk(); } })));
+    });
+  }
+
+  // Pausentimer (läuft auch weiter, wenn die Seite kurz im Hintergrund war)
+  let tInt = null, tEnd = 0;
+  function startTimer(sec) {
+    clearInterval(tInt);
+    tEnd = Date.now() + sec * 1000;
+    const el = $('#timer');
+    const tick = () => {
+      const left = Math.max(0, Math.round((tEnd - Date.now()) / 1000));
+      $('#timerT').textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+      if (left <= 0) {
+        clearInterval(tInt); el.classList.remove('show');
+        toast('Pause vorbei – nächster Satz');
+        if (navigator.vibrate) navigator.vibrate([180, 80, 180]);
+      }
+    };
+    tick(); el.classList.add('show');
+    tInt = setInterval(tick, 500);
+  }
+  function stopTimer() { clearInterval(tInt); $('#timer').classList.remove('show'); }
+  function addTimer(sec) { tEnd += sec * 1000; }
+
+  // Datei zum Speichern anbieten (z. B. Kalender, Sicherung)
+  function downloadFile(name, text, type) {
+    const blob = new Blob([text], { type });
+    const url = URL.createObjectURL(blob);
+    const a = h('a', { href: url, download: name });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  GYM.ui = { h, $, esc, kg, dateLong, dateShort, ICON, toast, sheet, confirmSheet, startTimer, stopTimer, addTimer, downloadFile };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+// ---- js/views.js ----
+// views.js – Seiten: Training, Plan, Kalender, Verlauf, Profil, Einrichtung
+(function (G) {
+  'use strict';
+  const GYM = G.GYM;
+  const { h, $, esc, kg, dateLong, dateShort, ICON, toast, sheet, confirmSheet, startTimer, downloadFile } = GYM.ui;
+  const st = GYM.store;
+  const L = GYM.LIB;
+  const V = GYM.views = {};
+  const rerender = () => GYM.app.render();
+  const save = () => st.save();
+  const icon = (name, cls) => h('span', { class: cls || '', html: ICON[name] });
+
+  // ==================================================================
+  // TRAINING
+  // ==================================================================
+  let curDayId = null;
+  V.training = function (root) {
+    const p = st.P();
+    const next = GYM.nextDay(p);
+    if (!curDayId || !p.plan.days.some(d => d.id === curDayId)) curDayId = next ? next.id : null;
+    if (!GYM.install.standalone && !st.S.ui.installHidden) root.appendChild(installBanner(true));
+    root.appendChild(statusBanner(p, next));
+    if (GYM.variationDue(p) && !p.dismissed['var:' + p.rotationStart]) {
+      root.appendChild(banner('info', 'info', 'Zeit für Abwechslung', 'Du trainierst seit 7 Wochen denselben Plan. Neue Reize bringen wieder Fortschritt – die Grundübungen bleiben gleich.',
+        [['Vorschläge ansehen', () => variationSheet(p), true], ['Später', () => { p.dismissed['var:' + p.rotationStart] = 1; save(); rerender(); }]]));
+    }
+    if (p.deload && p.deload.until >= GYM.today()) root.appendChild(banner('info', 'moon', 'Leichte Woche aktiv', 'Alle Gewichte sind bis ' + dateShort(p.deload.until) + ' um 10 % reduziert. So erholt sich der Körper und du startest danach stärker.', [['Beenden', () => { p.deload = null; save(); rerender(); }]]));
+
+    const tabs = h('div', { class: 'daytabs', role: 'tablist' });
+    p.plan.days.forEach(d => tabs.appendChild(h('button', { type: 'button', role: 'tab', class: (d.id === curDayId ? 'on' : '') + (next && d.id === next.id ? ' next' : ''), 'aria-selected': d.id === curDayId ? 'true' : 'false', text: d.name, title: next && d.id === next.id ? 'Als Nächstes dran' : '', onclick: () => { curDayId = d.id; rerender(); } })));
+    root.appendChild(tabs);
+    const day = p.plan.days.find(d => d.id === curDayId);
+    if (!day) { root.appendChild(h('div', { class: 'empty', text: 'Noch keine Trainingstage im Plan. Unter „Plan“ kannst du Übungen hinzufügen.' })); return; }
+    const done = p.done[day.id] = p.done[day.id] || {};
+    let total = 0, doneN = 0;
+    day.ex.forEach(e => { const a = done[e.id] || []; total += e.sets; doneN += a.filter(Boolean).length; });
+    root.appendChild(h('div', { class: 'day-meta' }, h('h2', { html: esc(day.name) + '<small>' + esc(day.title || '') + (next && day.id === next.id ? ' · als Nächstes dran' : '') + '</small>' }), h('div', { class: 'cnt', html: '<b>' + doneN + '</b> / ' + total + ' Sätze' })));
+    root.appendChild(h('div', { class: 'progress' }, h('i', { style: { width: (total ? doneN / total * 100 : 0) + '%' } })));
+    const list = h('div', { class: 'exlist' });
+    day.ex.forEach((inst, i) => list.appendChild(exerciseCard(p, day, inst, i)));
+    root.appendChild(list);
+    root.appendChild(h('button', { class: 'finish', type: 'button', disabled: doneN === 0, text: doneN === total && total ? 'Training abschließen ✓' : 'Training abschließen', onclick: () => finishSheet(p, day) }));
+  };
+
+  // Hinweis „Als App installieren“ mit Knopf (Chrome) oder Anleitung je nach Browser
+  function installBanner(closable) {
+    const ua = navigator.userAgent;
+    const inApp = /FBAN|FBAV|Instagram|WhatsApp|Telegram|Line\/|; wv\)|Obsidian/i.test(ua);
+    const samsung = /SamsungBrowser/i.test(ua);
+    const ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    let text, acts = [];
+    if (GYM.install.prompt) { text = 'Mit eigenem Icon auf dem Startbildschirm – funktioniert danach komplett ohne Internet.'; acts.push(['Jetzt installieren', () => GYM.install.run(), true]); }
+    else if (inApp) text = 'Du bist in einem eingebauten Browser (z. B. aus WhatsApp oder Obsidian). Tippe oben rechts auf ⋮ und wähle „In Chrome öffnen“ – dort erscheint dann „Installieren“.';
+    else if (samsung) text = 'Samsung Internet: unten auf ☰ (drei Striche) tippen → „Seite hinzufügen zu“ → „Startbildschirm“.';
+    else if (ios) text = 'In Safari unten auf „Teilen“ (Quadrat mit Pfeil) tippen → „Zum Home-Bildschirm“.';
+    else text = 'Chrome: oben rechts auf ⋮ (drei Punkte, neben der Adresszeile) tippen → „App installieren“ oder „Zum Startbildschirm hinzufügen“. Siehst du die Punkte nicht, einmal kurz nach oben wischen, damit die Adresszeile erscheint.';
+    return banner('', 'plus', 'Als App installieren', text, acts, closable ? () => { st.S.ui.installHidden = true; save(); rerender(); } : null);
+  }
+  V.installBanner = installBanner;
+
+  function banner(kind, ico, title, text, actions, onClose) {
+    const acts = h('div', { class: 'acts' }, (actions || []).map(([label, fn, primary]) => h('button', { class: 'btn sm ' + (primary ? 'lime' : ''), type: 'button', text: label, onclick: fn })));
+    return h('div', { class: 'banner ' + (kind || '') }, h('div', { class: 'ico', html: ICON[ico] }), h('div', { class: 'bt' }, h('b', { text: title }), h('p', { text }), actions && actions.length ? acts : null), onClose ? h('button', { class: 'x', type: 'button', 'aria-label': 'Schließen', text: '✕', onclick: onClose }) : null);
+  }
+
+  function statusBanner(p, next) {
+    const t = GYM.today(), s = GYM.todayStatus(p, t);
+    const tomorrow = GYM.addDays(t, 1);
+    const nm = next ? next.name : 'Training';
+    if (s.state === 'done') return banner('', 'check', 'Heute erledigt', 'Stark! Nächstes Training: ' + nextText(p, GYM.addDays(t, 1)) + '.');
+    if (s.state === 'due') return banner('', 'bell', 'Heute ist Training · ' + nm, 'Geplant um ' + p.reminder.time + ' Uhr. Geht heute nicht? Verschieben oder ausfallen lassen.',
+      [['Auf morgen verschieben', () => { GYM.moveDay(p, t, tomorrow); save(); toast('Auf morgen verschoben', { label: 'Rückgängig', fn: () => { GYM.unskip(p, t); delete p.sched.extra[tomorrow]; save(); rerender(); } }); rerender(); }], ['Ausfallen lassen', () => skipSheet(p, t)]]);
+    if (s.state === 'rest-suggested') return banner('warn', 'moon', 'Gestern trainiert – heute Pause empfohlen', 'Muskeln wachsen in der Erholung. Vorschlag: das heutige Training auf morgen verschieben.',
+      [['Auf morgen verschieben', () => { GYM.moveDay(p, t, tomorrow); save(); toast('Auf morgen verschoben'); rerender(); }, true], ['Trotzdem trainieren', () => { p.dismissed['rest:' + t] = 1; save(); rerender(); }]]);
+    if (s.state === 'catchup') return banner('info', 'cal', 'Gestriges Training verpasst', 'Heute nachholen? Danach rückt alles einen Tag weiter – oder du lässt es einfach ausfallen.',
+      [['Heute nachholen', () => { p.sched.extra[t] = true; GYM.skipDay(p, GYM.addDays(t, -1), 'nachgeholt'); p.dismissed['catchup:' + t] = 1; save(); rerender(); }, true], ['Ausfallen lassen', () => { GYM.skipDay(p, GYM.addDays(t, -1), 'ausgefallen'); p.dismissed['catchup:' + t] = 1; save(); rerender(); }]]);
+    return banner('', 'moon', 'Ruhetag', 'Nächstes Training: ' + nextText(p, t) + '. Du kannst natürlich trotzdem trainieren.');
+  }
+  function nextText(p, from) {
+    const d = GYM.nextPlannedDate(p, from);
+    if (!d) return 'kein Termin geplant';
+    const diff = GYM.diffDays(GYM.today(), d);
+    return (diff === 0 ? 'heute' : diff === 1 ? 'morgen' : GYM.WD_LONG[GYM.weekdayOf(d)]) + ', ' + p.reminder.time + ' Uhr';
+  }
+  function skipSheet(p, dateStr) {
+    sheet((sh, close) => {
+      sh.append(h('h2', { text: 'Training ausfallen lassen' }), h('p', { class: 'sub', text: dateLong(dateStr) + ' – kein Problem. Der Plan läuft beim nächsten Termin einfach weiter.' }));
+      const opts = h('div', { class: 'optlist' });
+      for (const [r, d] of [['Muskelkater', 'Zu stark – heute regenerieren'], ['Krank', 'Gesundheit geht vor'], ['Keine Zeit', 'Termin oder Arbeit'], ['Sonstiges', '']]) {
+        opts.appendChild(h('button', { class: 'opt', type: 'button', onclick: () => { GYM.skipDay(p, dateStr, r); save(); close(); toast('Ausgefallen: ' + r, { label: 'Rückgängig', fn: () => { GYM.unskip(p, dateStr); save(); rerender(); } }); rerender(); } }, h('span', { class: 'dot' }), h('div', {}, h('b', { text: r }), d ? h('span', { text: d }) : null)));
+      }
+      sh.append(opts, h('div', { class: 'acts' }, h('button', { class: 'btn', type: 'button', text: 'Abbrechen', onclick: close })));
+    });
+  }
+
+  function effLib(p, inst) { return (p.todaySwap && p.todaySwap[inst.id]) || inst.lib; }
+  function effWeight(p, inst) {
+    const lib = effLib(p, inst);
+    if (lib === inst.lib) return GYM.workWeight(p, inst);
+    const m = GYM.convertMax(inst.lib, lib, GYM.maxOf(p, inst)) || GYM.startMax(lib, p.body, p.level);
+    return Math.round(m * GYM.pctOf(p, inst) * 2) / 2;
+  }
+
+  function exerciseCard(p, day, inst, i) {
+    const lib = L[effLib(p, inst)] || { n: inst.lib, k: 'strength' };
+    const isCardio = lib.k === 'run' || lib.k === 'warm';
+    const done = p.done[day.id][inst.id] = p.done[day.id][inst.id] || Array(inst.sets).fill(false);
+    while (done.length < inst.sets) done.push(false);
+    done.length = inst.sets;
+    const complete = done.every(Boolean);
+    const card = h('div', { class: 'excard' + (isCardio ? ' cardio compact' : '') + (complete ? ' complete' : '') });
+    const chips = h('div', { class: 'chiprow' }, h('span', { class: 'chip', html: (inst.sets > 1 ? '<b>' + inst.sets + '</b> × ' : '') + esc(inst.reps) }), inst.rest ? h('span', { class: 'chip', html: 'Pause <b>' + inst.rest + ' s</b>' }) : null, inst.info ? h('span', { class: 'chip', text: inst.info }) : null);
+    const canSwap = GYM.alternatives(inst.lib).length > 0;
+    card.appendChild(h('div', { class: 'ex-head' }, h('div', { class: 'ex-num', html: complete ? ICON.check.replace('<svg ', '<svg width="14" height="14" ') : String(i + 1) }), h('div', { class: 'ex-title' }, h('h3', { text: lib.n }), chips, lib.id !== inst.lib ? h('div', { class: 'ex-tag', text: 'Heute getauscht (statt ' + L[inst.lib].n + ')' }) : null),
+      canSwap ? h('button', { class: 'iconbtn', type: 'button', 'aria-label': 'Übung tauschen', title: 'Übung tauschen', html: ICON.swap, onclick: () => swapSheet(p, day, inst) }) : null));
+    const w = !isCardio && lib.f ? effWeight(p, inst) : 0;
+    if (w > 0) {
+      const perHand = lib.eq === 'KH';
+      const mx = GYM.maxOf(p, inst);
+      const panel = h('div', { class: 'wpanel' },
+        h('div', {}, h('div', { class: 'wbig', html: kg(w) + '<small> kg' + (perHand ? ' je Hand' : '') + '</small>' }), h('div', { class: 'wsub', text: lib.id === inst.lib ? Math.round(GYM.pctOf(p, inst) * 100) + ' % von ' + kg(mx) + ' kg Max' : 'umgerechnet aus deinem Max' })));
+      if (lib.id === inst.lib) {
+        const stepV = lib.step || 2.5;
+        const adj = d => { GYM.setMax(p, inst.id, Math.max(0, Math.round((GYM.maxOf(p, inst) + d) * 100) / 100)); save(); rerender(); };
+        panel.appendChild(h('div', { class: 'wctl' }, h('button', { type: 'button', 'aria-label': 'Max verringern', text: '−', onclick: () => adj(-stepV) }), h('div', { class: 'mval', html: '<small>Max</small>' + kg(mx) }), h('button', { type: 'button', 'aria-label': 'Max erhöhen', text: '+', onclick: () => adj(stepV) })));
+      }
+      card.appendChild(panel);
+    }
+    const sets = h('div', { class: 'sets' });
+    done.forEach((v, s) => {
+      const b = h('button', { class: 'setpill' + (v ? ' done' : ''), type: 'button', text: inst.sets === 1 ? (isCardio ? 'Erledigt' : 'Satz 1') : 'Satz ' + (s + 1), 'aria-pressed': v ? 'true' : 'false' });
+      b.addEventListener('click', () => {
+        done[s] = !done[s];
+        if (done[s] && !p.sessionStart) p.sessionStart = Date.now();
+        save();
+        if (done[s] && inst.rest > 0 && !done.every(Boolean)) startTimer(inst.rest);
+        rerender();
+      });
+      sets.appendChild(b);
+    });
+    card.appendChild(sets);
+    // Vorschläge aus der Progression
+    const tip = (p.tips || []).find(t => t.instId === inst.id);
+    if (tip && tip.type === 'up' && lib.id === inst.lib) {
+      card.appendChild(h('div', { class: 'tip' }, h('span', { class: 'grow', text: '2× alle Sätze geschafft – Max um ' + kg(tip.add) + ' kg erhöhen?' }),
+        h('button', { class: 'btn sm lime', type: 'button', text: 'Erhöhen', onclick: () => { GYM.acceptIncrease(p, inst.id, tip.add); p.tips = p.tips.filter(x => x !== tip); save(); toast('Max erhöht'); rerender(); } }),
+        h('button', { class: 'btn sm', type: 'button', text: 'Noch nicht', onclick: () => { p.tips = p.tips.filter(x => x !== tip); save(); rerender(); } })));
+    } else if (tip && tip.type === 'stall') {
+      card.appendChild(h('div', { class: 'tip warn' }, h('span', { class: 'grow', text: '3× nicht alle Sätze geschafft. Übung tauschen oder eine leichte Woche einlegen?' }),
+        h('button', { class: 'btn sm', type: 'button', text: 'Tauschen', onclick: () => swapSheet(p, day, inst) }),
+        h('button', { class: 'btn sm', type: 'button', text: 'Leichte Woche', onclick: () => { GYM.startDeload(p); p.tips = (p.tips || []).filter(x => x.type !== 'stall'); save(); toast('Leichte Woche: −10 % für 7 Tage'); rerender(); } })));
+    } else if (complete && w > 0 && lib.id === inst.lib) {
+      card.appendChild(h('div', { class: 'tip', text: 'Alle Sätze erledigt. Obere Wiederholungszahl sauber geschafft? Dann zweimal hintereinander so – danach schlägt die App mehr Gewicht vor.' }));
+    }
+    return card;
+  }
+
+  function swapSheet(p, day, inst) {
+    const cur = L[effLib(p, inst)];
+    sheet((sh, close) => {
+      sh.append(h('h2', { text: 'Übung tauschen' }), h('p', { class: 'sub', text: 'Alternativen für „' + cur.n + '“ – gleiche Muskeln, gleiches Bewegungsmuster. Das Gewicht wird automatisch umgerechnet.' }));
+      let mode = 'today';
+      const seg = h('div', { class: 'pickchips', style: { marginBottom: '12px' } });
+      const mk = (k, l) => { const b = h('button', { class: 'pick' + (mode === k ? ' on' : ''), type: 'button', text: l, onclick: () => { mode = k; seg.querySelectorAll('.pick').forEach(x => x.classList.toggle('on', x === b)); } }); return b; };
+      seg.append(mk('today', 'Nur heute'), mk('perm', 'Dauerhaft im Plan'));
+      sh.appendChild(seg);
+      const list = h('div', { class: 'optlist' });
+      const alts = GYM.alternatives(inst.lib).filter(a => a.id !== cur.id);
+      if (cur.id !== inst.lib) alts.unshift({ id: inst.lib, n: L[inst.lib].n, why: ['ursprüngliche Übung aus deinem Plan'] });
+      for (const a of alts) {
+        const conv = GYM.convertMax(inst.lib, a.id, GYM.maxOf(p, inst));
+        const wtxt = L[a.id].f && GYM.maxOf(p, inst) ? ' · ca. ' + kg(Math.round(conv * GYM.pctOf(p, inst) * 2) / 2) + ' kg' : '';
+        list.appendChild(h('button', { class: 'opt', type: 'button', onclick: () => {
+          if (mode === 'perm' || a.id === inst.lib) {
+            if (a.id === inst.lib) delete p.todaySwap[inst.id];
+            else { GYM.swapExercise(p, day.id, inst.id, a.id); delete p.todaySwap[inst.id]; }
+          } else p.todaySwap[inst.id] = a.id;
+          p.tips = (p.tips || []).filter(t => t.instId !== inst.id);
+          save(); close(); toast(mode === 'perm' ? 'Im Plan getauscht' : 'Für heute getauscht'); rerender();
+        } }, h('span', { class: 'dot' }), h('div', {}, h('b', { text: a.n }), h('span', { text: (a.why.slice(0, 3).join(' · ') || L[a.id].m) + wtxt }))));
+      }
+      if (!alts.length) list.appendChild(h('div', { class: 'empty', text: 'Für diese Übung gibt es keine Alternativen in der Bibliothek.' }));
+      sh.append(list, h('div', { class: 'acts' }, h('button', { class: 'btn', type: 'button', text: 'Abbrechen', onclick: close })));
+    });
+  }
+
+  function finishSheet(p, day) {
+    const done = p.done[day.id] || {};
+    const mins = p.sessionStart ? Math.round((Date.now() - p.sessionStart) / 60000) : null;
+    sheet((sh, close) => {
+      const doneSets = day.ex.reduce((a, e) => a + (done[e.id] || []).filter(Boolean).length, 0);
+      const allSets = day.ex.reduce((a, e) => a + e.sets, 0);
+      const t = GYM.today();
+      let dateVal = t;
+      sh.append(h('h2', { text: 'Training abschließen' }), h('p', { class: 'sub', text: day.name + ' · ' + doneSets + ' von ' + allSets + ' Sätzen' + (mins && mins < 300 ? ' · ' + mins + ' min' : '') }));
+      const dIn = h('input', { class: 'inp', type: 'date', value: t, max: t, 'aria-label': 'Datum' });
+      dIn.addEventListener('change', () => { dateVal = dIn.value || t; });
+      sh.appendChild(h('label', { class: 'fld' }, 'Datum (falls du es später einträgst)', dIn));
+      sh.appendChild(h('div', { class: 'acts' }, h('button', { class: 'btn', type: 'button', text: 'Zurück', onclick: close }), h('button', { class: 'btn lime', type: 'button', text: 'Speichern', onclick: () => {
+        // heutige Tausch-Übungen werden mit protokolliert
+        const log = GYM.finishSession(p, day, done, dateVal);
+        log.ex.forEach(x => { if (p.todaySwap[x.id]) x.lib = p.todaySwap[x.id]; });
+        const tips = GYM.evaluateProgress(p, day, done);
+        p.tips = (p.tips || []).filter(x => !day.ex.some(e => e.id === x.instId)).concat(tips);
+        delete p.done[day.id];
+        day.ex.forEach(e => delete p.todaySwap[e.id]);
+        p.sessionStart = null;
+        GYM.ui.stopTimer();
+        save(); close();
+        const ups = tips.filter(x => x.type === 'up').length;
+        toast(ups ? 'Gespeichert · ' + ups + ' Steigerung' + (ups > 1 ? 'en' : '') + ' möglich' : 'Gespeichert – sauber gearbeitet');
+        curDayId = null; rerender();
+      } })));
+    });
+  }
+
+  function variationSheet(p) {
+    const sug = GYM.variationSuggestions(p);
+    sheet((sh, close) => {
+      sh.append(h('h2', { text: 'Abwechslung für die nächsten Wochen' }), h('p', { class: 'sub', text: 'Ergänzungsübungen tauschen, Grundübungen bleiben – so bleibt der Fortschritt messbar. Haken entfernen, was du behalten willst.' }));
+      const chosen = new Set(sug.map((_, i) => i));
+      const list = h('div', { class: 'optlist' });
+      sug.forEach((s, i) => {
+        const b = h('button', { class: 'opt on', type: 'button', onclick: () => { if (chosen.has(i)) chosen.delete(i); else chosen.add(i); b.classList.toggle('on'); } }, h('span', { class: 'dot' }), h('div', {}, h('b', { text: s.from + ' → ' + s.toName }), h('span', { text: s.why })));
+        list.appendChild(b);
+      });
+      if (!sug.length) list.appendChild(h('div', { class: 'empty', text: 'Keine passenden Alternativen gefunden.' }));
+      sh.append(list, h('div', { class: 'acts' }, h('button', { class: 'btn', type: 'button', text: 'Abbrechen', onclick: close }), h('button', { class: 'btn lime', type: 'button', text: 'Übernehmen', onclick: () => {
+        sug.forEach((s, i) => { if (chosen.has(i)) GYM.swapExercise(p, s.dayId, s.instId, s.to); });
+        p.rotationStart = GYM.today(); save(); close(); toast(chosen.size + ' Übungen getauscht'); rerender();
+      } })));
+    });
+  }
+
+  // ==================================================================
+  // PLAN
+  // ==================================================================
+  V.plan = function (root) {
+    const p = st.P();
+    root.appendChild(h('div', { class: 'sechead' }, h('h2', { text: 'Dein Plan' }), h('p', { text: GYM.GOALS[p.goal].label + ' · ' + GYM.LEVELS[p.level].label.split(' (')[0] + ' · ' + p.weekdays.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(w => GYM.WD_SHORT[w]).join(', ') + '. Tippe auf eine Übung, um Gewicht, Sätze oder Wiederholungen zu ändern, sie zu tauschen oder zu verschieben.' })));
+    if (GYM.variationDue(p)) root.appendChild(banner('info', 'info', 'Abwechslung empfohlen', 'Seit über 7 Wochen gleicher Plan.', [['Vorschläge ansehen', () => variationSheet(p), true]]));
+    for (const day of p.plan.days) {
+      root.appendChild(h('div', { class: 'planday' }, h('h3', { html: esc(day.name) + '<small>' + esc(day.title || '') + ' · ' + day.ex.length + ' Übungen</small>' }),
+        h('button', { class: 'iconbtn', type: 'button', 'aria-label': 'Tag umbenennen', html: ICON.edit, onclick: () => renameDay(p, day) })));
+      day.ex.forEach((inst, i) => {
+        const lib = L[inst.lib];
+        const w = lib && lib.f && GYM.maxOf(p, inst) ? GYM.workWeight(p, inst) : 0;
+        root.appendChild(h('button', { class: 'planrow', type: 'button', style: { width: '100%', textAlign: 'left' }, onclick: () => editExercise(p, day, inst, i) },
+          h('div', { class: 'nm' }, h('b', { text: lib ? lib.n : inst.lib }), h('span', { text: (inst.sets > 1 ? inst.sets + ' × ' : '') + inst.reps + (inst.rest ? ' · Pause ' + inst.rest + ' s' : '') })),
+          w ? h('div', { class: 'w', html: kg(w) + ' kg<small>Max ' + kg(GYM.maxOf(p, inst)) + ' · ' + Math.round(GYM.pctOf(p, inst) * 100) + ' %</small>' }) : null));
+      });
+      root.appendChild(h('button', { class: 'btn block', type: 'button', html: ICON.plus.replace('<svg ', '<svg width="16" height="16" ') + ' Übung hinzufügen', onclick: () => addExercise(p, day) }));
+    }
+    root.appendChild(h('div', { class: 'sublabel', text: 'Plan anpassen' }));
+    root.appendChild(h('div', { class: 'card stack' },
+      h('p', { class: 'small muted', text: 'Plan neu erstellen: aus Ziel, Erfahrung und Trainingstagen deines Profils. Deine Max-Werte für gleiche Übungen bleiben erhalten.' }),
+      h('button', { class: 'btn', type: 'button', text: 'Plan aus Profil neu erstellen', onclick: () => confirmSheet('Plan neu erstellen?', 'Der aktuelle Plan wird ersetzt. Dein Verlauf bleibt erhalten.', 'Neu erstellen', false, () => { regenerate(p); toast('Neuer Plan erstellt'); rerender(); }) }),
+      h('button', { class: 'btn', type: 'button', text: p.deload && p.deload.until >= GYM.today() ? 'Leichte Woche läuft bis ' + dateShort(p.deload.until) : 'Leichte Woche (−10 %) starten', disabled: !!(p.deload && p.deload.until >= GYM.today()), onclick: () => { GYM.startDeload(p); save(); toast('Leichte Woche gestartet'); rerender(); } }),
+      h('button', { class: 'btn', type: 'button', text: 'Abwechslung vorschlagen', onclick: () => variationSheet(p) })));
+  };
+
+  function regenerate(p) {
+    const old = {};
+    for (const d of p.plan.days) for (const e of d.ex) if (p.maxes[e.id]) old[e.lib] = p.maxes[e.id];
+    const gen = GYM.generatePlan(p);
+    p.plan = gen.plan; p.pcts = gen.pcts; p.maxes = gen.maxes; p.done = {}; p.tips = []; p.prog = {};
+    for (const d of p.plan.days) for (const e of d.ex) if (old[e.lib]) p.maxes[e.id] = old[e.lib];
+    for (const [k, v] of Object.entries(p.maxes)) if (!p.maxHist[k]) p.maxHist[k] = [{ d: GYM.today(), kg: v }];
+    p.rotationStart = GYM.today();
+    save();
+  }
+
+  function renameDay(p, day) {
+    sheet((sh, close) => {
+      const n = h('input', { class: 'inp', value: day.name, maxlength: '30' }), t = h('input', { class: 'inp', value: day.title || '', maxlength: '40' });
+      sh.append(h('h2', { text: 'Trainingstag umbenennen' }), h('div', { class: 'stack' }, h('label', { class: 'fld' }, 'Name', n), h('label', { class: 'fld' }, 'Schwerpunkt', t)),
+        h('div', { class: 'acts' }, h('button', { class: 'btn', type: 'button', text: 'Abbrechen', onclick: close }), h('button', { class: 'btn lime', type: 'button', text: 'Speichern', onclick: () => { day.name = n.value.trim() || day.name; day.title = t.value.trim(); save(); close(); rerender(); } })));
+    });
+  }
+
+  function editExercise(p, day, inst, idx) {
+    const lib = L[inst.lib];
+    sheet((sh, close) => {
+      sh.append(h('h2', { text: lib.n }), h('p', { class: 'sub', text: lib.m + ' · ' + GYM.eqName(lib.eq) + (lib.eq === 'KH' ? ' (Gewicht je Hand)' : '') }));
+      const sets = h('input', { class: 'inp', type: 'number', min: '1', max: '10', inputmode: 'numeric', value: inst.sets });
+      const reps = h('input', { class: 'inp', value: inst.reps, maxlength: '14' });
+      const rest = h('input', { class: 'inp', type: 'number', min: '0', max: '600', step: '15', inputmode: 'numeric', value: inst.rest });
+      const grid = h('div', { class: 'grid3' }, h('label', { class: 'fld' }, 'Sätze', sets), h('label', { class: 'fld' }, 'Wdh. / Zeit', reps), h('label', { class: 'fld' }, 'Pause (s)', rest));
+      sh.appendChild(grid);
+      let max = null, pct = null;
+      if (lib.f) {
+        max = h('input', { class: 'inp', type: 'number', min: '0', step: lib.step, inputmode: 'decimal', value: GYM.maxOf(p, inst) || '' });
+        pct = h('input', { class: 'inp', type: 'number', min: '30', max: '95', step: '5', inputmode: 'numeric', value: Math.round((p.pcts[inst.id] || 0.7) * 100) });
+        const out = h('p', { class: 'small lime', style: { marginTop: '8px' } });
+        const upd = () => { const m = parseFloat(String(max.value).replace(',', '.')) || 0, q = (parseFloat(pct.value) || 0) / 100; out.textContent = 'Arbeitsgewicht: ' + kg(Math.round(m * q / (lib.eq === 'KH' ? 0.5 : 0.25)) * (lib.eq === 'KH' ? 0.5 : 0.25)) + ' kg' + (lib.eq === 'KH' ? ' je Hand' : ''); };
+        max.addEventListener('input', upd); pct.addEventListener('input', upd); upd();
+        sh.append(h('div', { class: 'grid2', style: { marginTop: '10px' } }, h('label', { class: 'fld' }, 'Max (kg)', max), h('label', { class: 'fld' }, '% vom Max', pct)), out);
+        // Max ermitteln
+        const tw = h('input', { class: 'inp', type: 'number', min: '0', step: '0.5', inputmode: 'decimal', placeholder: 'kg' });
+        const tr = h('input', { class: 'inp', type: 'number', min: '1', max: '20', inputmode: 'numeric', placeholder: 'Wdh.' });
+        const calc = h('button', { class: 'btn', type: 'button', text: 'Max übernehmen', onclick: () => {
+          const w = parseFloat(String(tw.value).replace(',', '.')), r = parseInt(tr.value, 10);
+          if (!(w > 0) || !(r >= 1 && r <= 20)) { toast('Gewicht und 1–20 Wiederholungen eingeben'); return; }
+          max.value = GYM.roundTo(GYM.estimateMax(w, r), lib.step); upd(); toast('Max ≈ ' + kg(+max.value) + ' kg');
+        } });
+        sh.append(h('div', { class: 'card', style: { marginTop: '12px', background: 'var(--offset)' } }, h('b', { class: 'small', text: 'Max ermitteln' }), h('p', { class: 'xs muted', style: { margin: '4px 0 10px' }, text: 'Gewicht eingeben, das du sauber geschafft hast, und wie oft. Die App schätzt dein Maximum (Epley-Formel).' }), h('div', { class: 'grid3' }, tw, tr, calc)));
+      }
+      const pos = h('div', { class: 'grid3', style: { marginTop: '12px' } },
+        h('button', { class: 'btn', type: 'button', disabled: idx === 0, html: ICON.upArrow.replace('<svg ', '<svg width="16" height="16" ') + ' Hoch', onclick: () => { day.ex.splice(idx, 1); day.ex.splice(idx - 1, 0, inst); save(); close(); rerender(); } }),
+        h('button', { class: 'btn', type: 'button', disabled: idx === day.ex.length - 1, html: ICON.downArrow.replace('<svg ', '<svg width="16" height="16" ') + ' Runter', onclick: () => { day.ex.splice(idx, 1); day.ex.splice(idx + 1, 0, inst); save(); close(); rerender(); } }),
+        h('button', { class: 'btn', type: 'button', html: ICON.swap.replace('<svg ', '<svg width="16" height="16" ') + ' Tauschen', onclick: () => { close(); swapSheet(p, day, inst); } }));
+      sh.appendChild(pos);
+      sh.appendChild(h('div', { class: 'acts' },
+        h('button', { class: 'btn danger', type: 'button', text: 'Entfernen', onclick: () => {
+          const i = day.ex.indexOf(inst); day.ex.splice(i, 1); save(); close();
+          toast('Übung entfernt', { label: 'Rückgängig', fn: () => { day.ex.splice(i, 0, inst); save(); rerender(); } }); rerender();
+        } }),
+        h('button', { class: 'btn lime', type: 'button', text: 'Speichern', onclick: () => {
+          const s = parseInt(sets.value, 10), r = parseInt(rest.value, 10);
+          if (!(s >= 1 && s <= 10)) { toast('Sätze: 1 bis 10'); return; }
+          inst.sets = s; inst.reps = reps.value.trim() || inst.reps; inst.rest = r >= 0 ? r : inst.rest;
+          if (max) {
+            const m = parseFloat(String(max.value).replace(',', '.')), q = parseFloat(pct.value);
+            if (m >= 0 && m !== GYM.maxOf(p, inst)) GYM.setMax(p, inst.id, m);
+            if (q >= 30 && q <= 95) p.pcts[inst.id] = q / 100;
+          }
+          save(); close(); toast('Gespeichert'); rerender();
+        } })));
+    });
+  }
+
+  function addExercise(p, day) {
+    sheet((sh, close) => {
+      sh.append(h('h2', { text: 'Übung hinzufügen' }), h('p', { class: 'sub', text: 'Zu „' + day.name + '“. Wird am Ende angefügt – danach kannst du sie verschieben.' }));
+      const q = h('input', { class: 'inp', placeholder: 'Suchen, z. B. Rudern', 'aria-label': 'Übung suchen' });
+      let grp = '';
+      const chips = h('div', { class: 'pickchips', style: { marginTop: '10px' } });
+      const list = h('div', { class: 'optlist', style: { marginTop: '12px' } });
+      const draw = () => {
+        chips.innerHTML = '';
+        ['', ...GYM.MUSCLE_GROUPS].forEach(g => chips.appendChild(h('button', { class: 'pick' + (g === grp ? ' on' : ''), type: 'button', text: g || 'Alle', onclick: () => { grp = g; draw(); } })));
+        list.innerHTML = '';
+        const t = q.value.trim().toLowerCase();
+        const items = Object.values(L).filter(e => (!grp || GYM.groupOf(e) === grp) && (!t || (e.n + ' ' + e.m).toLowerCase().includes(t)));
+        for (const e of items.slice(0, 60)) list.appendChild(h('button', { class: 'opt', type: 'button', onclick: () => {
+          const goal = GYM.GOALS[p.goal];
+          const sch = e.k === 'abs' ? goal.abs : e.compound ? goal.c : goal.a;
+          const inst = e.k === 'run' || e.k === 'warm' ? GYM.mkEx(e.id, 1, e.k === 'warm' ? '5 min' : '15 min', 0, '') : GYM.mkEx(e.id, sch.sets, e.p === 'abs_static' ? '45 s' : sch.reps, sch.rest, '');
+          day.ex.push(inst);
+          if (e.f && e.k !== 'run') { GYM.setMax(p, inst.id, GYM.startMax(e.id, p.body, p.level)); p.pcts[inst.id] = sch.pct || 0.65; }
+          save(); close(); toast(e.n + ' hinzugefügt'); rerender();
+        } }, h('span', { class: 'dot' }), h('div', {}, h('b', { text: e.n }), h('span', { text: e.m + ' · ' + GYM.eqName(e.eq) }))));
+        if (!items.length) list.appendChild(h('div', { class: 'empty', text: 'Nichts gefunden.' }));
+      };
+      q.addEventListener('input', draw);
+      sh.append(h('div', { class: 'search' }, q, chips), list, h('div', { class: 'acts' }, h('button', { class: 'btn', type: 'button', text: 'Schließen', onclick: close })));
+      draw();
+    });
+  }
+
+  // ==================================================================
+  // KALENDER
+  // ==================================================================
+  let calY = null, calM = null;
+  V.calendar = function (root) {
+    const p = st.P();
+    const now = new Date();
+    if (calY === null) { calY = now.getFullYear(); calM = now.getMonth(); }
+    root.appendChild(h('div', { class: 'sechead' }, h('h2', { text: 'Kalender' }), h('p', { text: 'Tippe auf einen Tag, um ein Training ausfallen zu lassen, zu verschieben oder zusätzlich einzuplanen.' })));
+    const card = h('div', { class: 'card' });
+    const title = new Date(calY, calM, 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+    card.appendChild(h('div', { class: 'calhead' },
+      h('button', { class: 'iconbtn', type: 'button', 'aria-label': 'Vorheriger Monat', html: ICON.left, onclick: () => { calM--; if (calM < 0) { calM = 11; calY--; } rerender(); } }),
+      h('h3', { text: title }),
+      h('button', { class: 'iconbtn', type: 'button', 'aria-label': 'Nächster Monat', html: ICON.right, onclick: () => { calM++; if (calM > 11) { calM = 0; calY++; } rerender(); } })));
+    const grid = h('div', { class: 'calgrid' });
+    ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].forEach(w => grid.appendChild(h('div', { class: 'wd', text: w })));
+    for (const c of GYM.monthGrid(p, calY, calM)) {
+      if (!c) { grid.appendChild(h('div', {})); continue; }
+      const lbl = c.state === 'done' ? (c.log.dayName || '').replace('Ganzkörper ', 'GK ') : c.state === 'skipped' ? (c.reason === 'verschoben' ? 'verschob.' : 'aus') : '';
+      grid.appendChild(h('button', { class: 'cday ' + c.state + (c.today ? ' today' : ''), type: 'button', 'aria-label': dateLong(c.s) + ' – ' + ({ done: 'trainiert', planned: 'geplant', skipped: 'ausgefallen', missed: 'verpasst', none: 'frei' })[c.state], onclick: () => daySheet(p, c) }, String(c.d), lbl ? h('small', { text: lbl }) : null));
+    }
+    card.appendChild(grid);
+    card.appendChild(h('div', { class: 'legend', html: '<span><i style="background:var(--lime);border-color:var(--lime)"></i>trainiert</span><span><i style="border-color:var(--lime-line)"></i>geplant</span><span><i style="border-style:dashed"></i>ausgefallen</span><span><i style="border-color:rgba(255,107,94,.45)"></i>verpasst</span>' }));
+    root.appendChild(card);
+    root.appendChild(reminderCard(p));
+  };
+
+  function daySheet(p, c) {
+    const t = GYM.today();
+    sheet((sh, close) => {
+      sh.append(h('h2', { text: dateLong(c.s) }));
+      const acts = h('div', { class: 'stack', style: { marginTop: '12px' } });
+      const done = () => { save(); close(); rerender(); };
+      if (c.state === 'done') {
+        sh.appendChild(h('p', { class: 'sub', text: c.log.dayName + ' · ' + c.log.sets + ' Sätze' }));
+        acts.appendChild(h('button', { class: 'btn', type: 'button', text: 'Eintrag bearbeiten', onclick: () => { close(); editLog(p, c.log); } }));
+      } else if (c.state === 'planned') {
+        sh.appendChild(h('p', { class: 'sub', text: 'Training geplant um ' + p.reminder.time + ' Uhr.' }));
+        acts.appendChild(h('button', { class: 'btn', type: 'button', text: 'Ausfallen lassen', onclick: () => { close(); skipSheet(p, c.s); } }));
+        for (let i = 1; i <= 3; i++) {
+          const to = GYM.addDays(c.s, i);
+          if (GYM.isPlanned(p, to)) continue;
+          acts.appendChild(h('button', { class: 'btn', type: 'button', text: 'Verschieben auf ' + GYM.WD_LONG[GYM.weekdayOf(to)] + ', ' + GYM.parseDs(to).toLocaleDateString('de-DE', { day: 'numeric', month: 'numeric' }), onclick: () => { GYM.moveDay(p, c.s, to); toast('Verschoben'); done(); } }));
+        }
+      } else if (c.state === 'skipped') {
+        sh.appendChild(h('p', { class: 'sub', text: 'Ausgefallen: ' + c.reason }));
+        acts.appendChild(h('button', { class: 'btn lime', type: 'button', text: 'Wieder einplanen', onclick: () => { GYM.unskip(p, c.s); done(); } }));
+      } else {
+        sh.appendChild(h('p', { class: 'sub', text: c.state === 'missed' ? 'Hier war ein Training geplant.' : 'Kein Training geplant.' }));
+        if (c.s >= t) acts.appendChild(h('button', { class: 'btn lime', type: 'button', text: 'Zusätzliches Training einplanen', onclick: () => { p.sched.extra[c.s] = true; GYM.unskip(p, c.s); toast('Eingeplant'); done(); } }));
+        if (c.state === 'missed') acts.appendChild(h('button', { class: 'btn', type: 'button', text: 'Als ausgefallen markieren', onclick: () => { GYM.skipDay(p, c.s, 'ausgefallen'); done(); } }));
+        if (c.s <= t) acts.appendChild(h('button', { class: 'btn', type: 'button', text: 'Training nachtragen', onclick: () => { close(); addPastLog(p, c.s); } }));
+      }
+      if (p.sched.extra[c.s] && c.state !== 'done') acts.appendChild(h('button', { class: 'btn danger', type: 'button', text: 'Zusatztermin entfernen', onclick: () => { delete p.sched.extra[c.s]; done(); } }));
+      sh.append(acts, h('div', { class: 'acts' }, h('button', { class: 'btn', type: 'button', text: 'Schließen', onclick: close })));
+    });
+  }
+
+  function addPastLog(p, s) {
+    sheet((sh, close) => {
+      sh.append(h('h2', { text: 'Training nachtragen' }), h('p', { class: 'sub', text: dateLong(s) + ' – welches Training?' }));
+      const list = h('div', { class: 'optlist' });
+      p.plan.days.forEach(d => list.appendChild(h('button', { class: 'opt', type: 'button', onclick: () => {
+        const all = {}; d.ex.forEach(e => { all[e.id] = Array(e.sets).fill(true); });
+        GYM.finishSession(p, d, all, s); save(); close(); toast('Nachgetragen'); rerender();
+      } }, h('span', { class: 'dot' }), h('div', {}, h('b', { text: d.name }), h('span', { text: 'alle Sätze als erledigt' })))));
+      sh.append(list, h('div', { class: 'acts' }, h('button', { class: 'btn', type: 'button', text: 'Abbrechen', onclick: close })));
+    });
+  }
+
+  function reminderCard(p) {
+    const time = h('input', { class: 'inp', type: 'time', value: p.reminder.time, 'aria-label': 'Uhrzeit der Erinnerung' });
+    time.addEventListener('change', () => { if (/^\d\d:\d\d$/.test(time.value)) { p.reminder.time = time.value; save(); toast('Uhrzeit gespeichert'); } });
+    const wd = h('div', { class: 'pickchips week' });
+    [1, 2, 3, 4, 5, 6, 0].forEach(w => {
+      const b = h('button', { class: 'pick' + (p.weekdays.includes(w) ? ' on' : ''), type: 'button', text: GYM.WD_SHORT[w], 'aria-pressed': p.weekdays.includes(w) ? 'true' : 'false', onclick: () => {
+        const has = p.weekdays.includes(w);
+        if (has && p.weekdays.length <= 1) { toast('Mindestens ein Trainingstag'); return; }
+        p.weekdays = has ? p.weekdays.filter(x => x !== w) : p.weekdays.concat([w]);
+        save(); rerender();
+      } });
+      wd.appendChild(b);
+    });
+    const notifState = 'Notification' in window ? Notification.permission : 'unsupported';
+    return h('div', { class: 'card stack' },
+      h('h3', { text: 'Trainingstage & Erinnerung' }),
+      h('label', { class: 'fld' }, 'Wochentage', wd),
+      p.weekdays.length !== p.plan.days.length ? h('p', { class: 'xs muted', text: 'Dein Plan hat ' + p.plan.days.length + ' Trainingstage, du trainierst ' + p.weekdays.length + '× pro Woche. Die Einheiten laufen einfach der Reihe nach durch. Passender Plan: Profil → Plan neu erstellen.' }) : null,
+      h('label', { class: 'fld' }, 'Uhrzeit', time),
+      h('button', { class: 'btn lime', type: 'button', html: ICON.cal.replace('<svg ', '<svg width="16" height="16" ') + ' Erinnerung im Handy-Kalender anlegen', onclick: () => {
+        downloadFile('gym-plan-training.ics', GYM.buildICS(p), 'text/calendar');
+        toast('Datei öffnen → Kalender fragt nach Hinzufügen');
+      } }),
+      h('p', { class: 'xs muted', text: 'Legt einen wiederkehrenden Termin an deinen Trainingstagen um ' + p.reminder.time + ' Uhr mit Erinnerung an. Der Handy-Kalender erinnert zuverlässig, auch ohne Internet. Bei geänderten Tagen oder Uhrzeit die Datei neu anlegen und den alten Termin im Kalender löschen. Verschiebungen und Ausfälle zeigt die App selbst an.' }),
+      notifState === 'unsupported' ? null : h('button', { class: 'btn', type: 'button', disabled: notifState === 'granted', html: ICON.bell.replace('<svg ', '<svg width="16" height="16" ') + (notifState === 'granted' ? ' App-Benachrichtigungen aktiv' : ' App-Benachrichtigungen erlauben'), onclick: async () => {
+        try { const r = await Notification.requestPermission(); if (r === 'granted') { GYM.app.registerReminder(); toast('Benachrichtigungen erlaubt'); } else toast('Nicht erlaubt'); } catch (e) { toast('Nicht unterstützt'); }
+        rerender();
+      } }),
+      notifState === 'unsupported' ? null : h('p', { class: 'xs muted', text: 'Zusätzlich: Ist die App installiert, meldet sie sich an Trainingstagen ab ' + p.reminder.time + ' Uhr, sobald Android sie im Hintergrund prüfen lässt. Das klappt nicht immer pünktlich, deshalb ist der Kalender die verlässliche Erinnerung.' }));
+  }
+
+  // ==================================================================
+  // VERLAUF & STATISTIK
+  // ==================================================================
+  V.history = function (root) {
+    const p = st.P();
+    root.appendChild(h('div', { class: 'sechead' }, h('h2', { text: 'Verlauf & Statistik' }), h('p', { text: 'Wie regelmäßig und intensiv du trainierst und wo du stärker geworden bist.' })));
+    const ws = GYM.weeklyStats(p, 8);
+    const cur = ws.current;
+    const inten = ws.intensity === null ? '–' : Math.round(ws.intensity * 100) + ' %';
+    root.appendChild(h('div', { class: 'statgrid' },
+      stat(cur.sessions + '/' + p.weekdays.length, 'Trainings diese Woche'),
+      stat(String(cur.sets), 'Sätze diese Woche'),
+      stat(inten, 'Intensität ggü. Ø der letzten Wochen'),
+      stat(String(GYM.streakWeeks(p)), 'Wochen in Folge voll trainiert')));
+    root.appendChild(h('div', { class: 'card' }, h('h3', { text: 'Trainingsumfang der letzten 8 Wochen' }), h('p', { class: 'xs muted', style: { margin: '2px 0 10px' }, text: 'Balken: Sätze pro Woche · Zahl darüber: Anzahl Trainings' }), chartSVG(ws.weeks)));
+    const prog = GYM.progressions(p);
+    const pc = h('div', { class: 'card' }, h('h3', { text: 'Steigerungen seit Start' }));
+    const ups = prog.filter(x => x.diff > 0);
+    if (!ups.length) pc.appendChild(h('p', { class: 'small muted', style: { marginTop: '6px' }, text: 'Noch keine Steigerungen. Sobald du ein Max erhöhst, siehst du hier deinen Fortschritt.' }));
+    ups.slice(0, 8).forEach(x => pc.appendChild(h('div', { class: 'prog' }, h('div', { class: 'nm', html: esc(x.n) + '<span>' + kg(x.first) + ' → ' + kg(x.now) + ' kg Max · seit ' + dateShort(x.since) + '</span>' }), h('div', { class: 'up', text: '+' + kg(x.diff) + ' kg (' + Math.round(x.pct * 100) + ' %)' }))));
+    root.appendChild(pc);
+    root.appendChild(h('div', { class: 'sublabel', text: 'Trainings' }));
+    if (!p.logs.length) root.appendChild(h('div', { class: 'empty', text: 'Noch kein Training abgeschlossen. Nach dem Training auf „Training abschließen“ tippen.' }));
+    p.logs.forEach(l => {
+      const row = h('div', { class: 'logitem' },
+        h('div', { class: 'ico', html: ICON.check.replace('<svg ', '<svg width="18" height="18" ') }),
+        h('button', { class: 'txt', type: 'button', onclick: () => editLog(p, l) }, h('b', { text: l.dayName }), h('span', { text: dateShort(l.d) + ' · ' + l.sets + ' Sätze' })),
+        h('button', { class: 'iconbtn', type: 'button', 'aria-label': 'Bearbeiten', html: ICON.edit, onclick: () => editLog(p, l) }),
+        h('button', { class: 'iconbtn', type: 'button', 'aria-label': 'Löschen', html: ICON.trash, onclick: () => deleteLog(p, l) }));
+      root.appendChild(row);
+    });
+    if (p.logs.length) root.appendChild(h('button', { class: 'btn danger block', type: 'button', style: { marginTop: '14px' }, text: 'Ganzen Verlauf löschen', onclick: () => confirmSheet('Ganzen Verlauf löschen?', 'Alle ' + p.logs.length + ' Trainings werden entfernt. Plan und Max-Werte bleiben. Das lässt sich nicht rückgängig machen.', 'Alles löschen', true, () => { p.logs = []; save(); toast('Verlauf gelöscht'); rerender(); }) }));
+  };
+  const stat = (b, s) => h('div', { class: 'stat' }, h('b', { text: b }), h('span', { text: s }));
+  function chartSVG(weeks) {
+    const W = 340, H = 150, pad = 22, bw = (W - pad) / weeks.length;
+    const max = Math.max(4, ...weeks.map(w => w.sets));
+    let s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Sätze pro Woche">';
+    s += '<line x1="0" y1="' + (H - 20) + '" x2="' + W + '" y2="' + (H - 20) + '" stroke="var(--border)"/>';
+    weeks.forEach((w, i) => {
+      const bh = Math.round((w.sets / max) * (H - 50));
+      const x = pad / 2 + i * bw + bw * 0.18, y = H - 20 - bh;
+      const last = i === weeks.length - 1;
+      s += '<rect x="' + x.toFixed(1) + '" y="' + y + '" width="' + (bw * 0.64).toFixed(1) + '" height="' + Math.max(bh, w.sets ? 3 : 0) + '" rx="5" fill="' + (last ? 'var(--lime)' : 'rgba(198,245,39,.45)') + '"/>';
+      if (w.sessions) s += '<text x="' + (x + bw * 0.32).toFixed(1) + '" y="' + (y - 6) + '" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--text)">' + w.sessions + '×</text>';
+      const d = GYM.parseDs(w.mon);
+      s += '<text x="' + (x + bw * 0.32).toFixed(1) + '" y="' + (H - 5) + '" text-anchor="middle" font-size="10">' + d.getDate() + '.' + (d.getMonth() + 1) + '.</text>';
+    });
+    s += '</svg>';
+    return h('div', { html: s });
+  }
+  function deleteLog(p, l) {
+    const i = p.logs.indexOf(l);
+    if (i < 0) return;
+    p.logs.splice(i, 1); save(); rerender();
+    toast('Training gelöscht', { label: 'Rückgängig', fn: () => { p.logs.splice(i, 0, l); save(); rerender(); } });
+  }
+  function editLog(p, l) {
+    sheet((sh, close) => {
+      sh.append(h('h2', { text: 'Training bearbeiten' }), h('p', { class: 'sub', text: 'Datum oder Trainingstag korrigieren.' }));
+      const d = h('input', { class: 'inp', type: 'date', value: l.d, max: GYM.today() });
+      const sel = h('select', { class: 'inp' });
+      p.plan.days.forEach(x => sel.appendChild(h('option', { value: x.id, text: x.name })));
+      if (!p.plan.days.some(x => x.id === l.dayId)) sel.appendChild(h('option', { value: l.dayId, text: l.dayName + ' (alter Plan)' }));
+      sel.value = l.dayId;
+      const sets = h('input', { class: 'inp', type: 'number', min: '0', max: '80', inputmode: 'numeric', value: l.sets });
+      sh.append(h('div', { class: 'stack' }, h('label', { class: 'fld' }, 'Datum', d), h('label', { class: 'fld' }, 'Trainingstag', sel), h('label', { class: 'fld' }, 'Erledigte Sätze', sets)));
+      if (l.ex && l.ex.length) sh.appendChild(h('p', { class: 'xs muted', style: { marginTop: '10px' }, text: l.ex.map(x => (L[x.lib] ? L[x.lib].n : '') + ' ' + x.sets + '/' + x.of + (x.w ? ' · ' + kg(x.w) + ' kg' : '')).join(' · ') }));
+      sh.append(h('div', { class: 'acts' }, h('button', { class: 'btn danger', type: 'button', text: 'Löschen', onclick: () => { close(); deleteLog(p, l); } }),
+        h('button', { class: 'btn lime', type: 'button', text: 'Speichern', onclick: () => {
+          if (!d.value) { toast('Datum wählen'); return; }
+          l.d = d.value; l.dayId = sel.value; const dd = p.plan.days.find(x => x.id === sel.value); if (dd) l.dayName = dd.name;
+          const s = parseInt(sets.value, 10); if (s >= 0) l.sets = s;
+          p.logs.sort((a, b) => (a.d < b.d ? 1 : a.d > b.d ? -1 : 0));
+          save(); close(); toast('Gespeichert'); rerender();
+        } })));
+    });
+  }
+
+  // ==================================================================
+  // PROFIL & EINSTELLUNGEN (einziger Ort für Körperwerte)
+  // ==================================================================
+  V.profile = function (root) {
+    const p = st.P();
+    const m = GYM.bodyMetrics(p);
+    root.appendChild(h('div', { class: 'sechead' }, h('h2', { text: 'Profil' }), h('p', { text: 'Persönliche Daten bleiben nur auf diesem Gerät.' })));
+    root.appendChild(h('div', { class: 'card' }, h('div', { class: 'pcard' }, h('div', { class: 'av', text: (p.name || '?').slice(0, 1).toUpperCase() }),
+      h('div', { class: 'grow', style: { flex: '1', minWidth: '0' } }, h('h3', { text: p.name }), h('p', { class: 'small muted', text: GYM.GOALS[p.goal].label + ' · ' + GYM.LEVELS[p.level].label.split(' (')[0] + ' · ' + p.weekdays.length + '× pro Woche' })),
+      h('button', { class: 'iconbtn', type: 'button', 'aria-label': 'Profil bearbeiten', html: ICON.edit, onclick: () => editProfile(p) }))));
+
+    // Körper & Gewicht
+    root.appendChild(h('div', { class: 'sublabel', text: 'Körper & Gewicht' }));
+    const wIn = h('input', { class: 'inp', type: 'number', step: '0.1', min: '30', max: '300', inputmode: 'decimal', placeholder: 'Heute gewogen (kg)', 'aria-label': 'Gewicht in kg' });
+    const wDate = h('input', { class: 'inp', type: 'date', value: GYM.today(), max: GYM.today(), 'aria-label': 'Datum der Messung' });
+    const saveW = () => {
+      const v = parseFloat(String(wIn.value).replace(',', '.'));
+      if (!(v >= 30 && v <= 300)) { toast('Bitte ein Gewicht zwischen 30 und 300 kg eingeben'); return; }
+      const d = wDate.value || GYM.today();
+      const same = p.weights.find(w => w.d === d);
+      if (same) same.kg = v; else p.weights.push({ d, kg: v });
+      p.weights.sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0));
+      p.body.weight = p.weights[p.weights.length - 1].kg; save(); toast('Gewicht gespeichert'); rerender();
+    };
+    wIn.addEventListener('keydown', e => { if (e.key === 'Enter') saveW(); });
+    const wc = h('div', { class: 'card stack' }, h('div', { class: 'row' }, h('div', { class: 'grow' }, wIn), h('button', { class: 'btn lime', type: 'button', text: 'Speichern', onclick: saveW })),
+      h('details', {}, h('summary', { class: 'xs muted', style: { cursor: 'pointer' }, text: 'Anderes Datum (z. B. Startgewicht nachtragen)' }), h('div', { style: { marginTop: '8px' } }, wDate)));
+    if (m.weight) {
+      const g = h('div', { class: 'grid2' });
+      g.appendChild(metric(kg(m.weight) + ' kg', 'aktuell', m.start !== undefined && p.weights.length > 1 ? ((m.change > 0 ? '+' : '') + kg(m.change) + ' kg seit ' + dateShort(m.startDate)) : 'Startgewicht', m.change < 0 ? 'var(--lime)' : m.change > 0 ? 'var(--warn)' : 'var(--muted)'));
+      g.appendChild(metric(p.body.target ? kg(p.body.target) + ' kg' : '–', 'Zielgewicht', m.toTarget !== undefined ? (m.toTarget > 0 ? 'noch ' + kg(m.toTarget) + ' kg' : 'erreicht') : 'im Profil festlegen', 'var(--muted)'));
+      wc.appendChild(g);
+      if (p.weights.length > 1) wc.appendChild(weightChart(p.weights));
+    }
+    root.appendChild(wc);
+    if (m.bmi) {
+      const pos = Math.max(0, Math.min(100, (m.bmi - 15) / (40 - 15) * 100));
+      const bc = h('div', { class: 'card stack' },
+        h('div', { class: 'grid2' }, metric(m.bmi.toFixed(1).replace('.', ','), 'BMI', m.bmiCat, 'var(--muted)'), metric(kg(Math.round(m.healthy[0])) + '–' + kg(Math.round(m.healthy[1])) + ' kg', 'gesunder Bereich (BMI)', 'bei ' + p.body.height + ' cm', 'var(--muted)')),
+        h('div', { class: 'scale', html: '<i style="left:calc(' + pos + '% - 2px)"></i>' }),
+        h('p', { class: 'xs muted', text: 'Der BMI unterscheidet nicht zwischen Muskeln und Fett – wer viel trainiert, liegt oft „zu hoch“. Aussagekräftiger für Sportler: Taille-zu-Größe-Verhältnis' + (m.whtr ? '.' : ' (Taillenumfang im Profil eintragen).') }));
+      if (m.whtr) bc.appendChild(h('div', { class: 'grid2' }, metric(m.whtr.toFixed(2).replace('.', ','), 'Taille / Größe', m.whtrCat, m.whtrCat === 'gesund' ? 'var(--lime)' : 'var(--warn)'), metric((p.body.waist) + ' cm', 'Taillenumfang', 'Ziel: unter ' + Math.round(p.body.height * 0.5) + ' cm', 'var(--muted)')));
+      if (m.tdee) bc.appendChild(h('p', { class: 'xs muted', text: 'Richtwert Energiebedarf: Grundumsatz ≈ ' + Math.round(m.bmr) + ' kcal, mit Training ≈ ' + Math.round(m.tdee / 10) * 10 + ' kcal/Tag' + (p.goal === 'definition' ? ' – zum Abnehmen etwa ' + Math.round(m.goalKcal / 10) * 10 + ' kcal.' : p.goal === 'muskel' ? ' – für Muskelaufbau etwa ' + Math.round(m.goalKcal / 10) * 10 + ' kcal.' : '.') }));
+      root.appendChild(bc);
+    } else root.appendChild(h('div', { class: 'card small muted', text: 'Größe, Alter und Gewicht im Profil eintragen, um BMI, gesunden Gewichtsbereich und Taille-Größe-Verhältnis zu sehen.' }));
+    if (p.weights.length) {
+      const hist = h('div', { class: 'whist' });
+      p.weights.slice().reverse().slice(0, 12).forEach(w => hist.appendChild(h('div', {}, h('span', { text: dateShort(w.d) }), h('b', { text: kg(w.kg) + ' kg' }),
+        h('button', { class: 'iconbtn', type: 'button', style: { width: '34px', height: '34px' }, 'aria-label': 'Eintrag löschen', html: ICON.trash, onclick: () => { const i = p.weights.indexOf(w); p.weights.splice(i, 1); save(); rerender(); toast('Gelöscht', { label: 'Rückgängig', fn: () => { p.weights.splice(i, 0, w); save(); rerender(); } }); } }))));
+      root.appendChild(h('details', { class: 'card' }, h('summary', { class: 'small', style: { cursor: 'pointer', fontWeight: '700' }, text: 'Gewichtsverlauf (' + p.weights.length + ' Einträge)' }), hist));
+    }
+
+    // Profile
+    root.appendChild(h('div', { class: 'sublabel', text: 'Profile auf diesem Gerät' }));
+    const pl = h('div', { class: 'card stack' });
+    Object.values(st.S.profiles).forEach(x => pl.appendChild(h('div', { class: 'row' }, h('div', { class: 'who', style: { maxWidth: 'none', flex: '1' } }, h('div', { class: 'av', text: x.name.slice(0, 1).toUpperCase() }), h('span', { text: x.name + (x.id === p.id ? ' · aktiv' : '') })),
+      x.id === p.id ? null : h('button', { class: 'btn sm', type: 'button', text: 'Wechseln', onclick: () => { st.S.active = x.id; save(); curDayId = null; toast('Profil: ' + x.name); GYM.app.go('training'); } }),
+      h('button', { class: 'iconbtn', type: 'button', 'aria-label': 'Profil löschen', html: ICON.trash, onclick: () => confirmSheet('Profil „' + x.name + '“ löschen?', 'Plan, Verlauf und Körperwerte dieses Profils werden gelöscht.', 'Löschen', true, () => { st.removeProfile(x.id); curDayId = null; if (!st.P()) GYM.app.onboarding(); else rerender(); }) }))));
+    pl.appendChild(h('button', { class: 'btn', type: 'button', html: ICON.plus.replace('<svg ', '<svg width="16" height="16" ') + ' Neues Profil (z. B. für einen Kumpel)', onclick: () => GYM.app.onboarding(true) }));
+    root.appendChild(pl);
+
+    // Daten
+    root.appendChild(h('div', { class: 'sublabel', text: 'Daten & App' }));
+    const file = h('input', { type: 'file', accept: '.json,application/json', hidden: true });
+    file.addEventListener('change', () => {
+      const f = file.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { try { const n = st.importBackup(r.result); toast(n + ' Profil(e) importiert'); curDayId = null; rerender(); } catch (e) { toast(e.message || 'Import fehlgeschlagen'); } };
+      r.readAsText(f);
+    });
+    if (!GYM.install.standalone) root.appendChild(installBanner(false));
+    root.appendChild(h('div', { class: 'card stack' },
+      h('p', { class: 'small muted', text: 'Alles wird nur auf diesem Gerät gespeichert, die App braucht kein Internet. Für einen Handywechsel: Sicherung exportieren und auf dem neuen Gerät importieren.' }),
+      h('div', { class: 'grid2' }, h('button', { class: 'btn', type: 'button', text: 'Sicherung exportieren', onclick: () => downloadFile('gym-plan-sicherung-' + GYM.today() + '.json', st.exportBackup(), 'application/json') }), h('button', { class: 'btn', type: 'button', text: 'Sicherung importieren', onclick: () => file.click() })),
+      file,
+      h('p', { class: 'xs muted', text: 'Gym Plan ' + GYM.VERSION + (st.persistent ? ' · Speicher aktiv' : ' · Achtung: Speicher nicht verfügbar (Vorschau)') })));
+  };
+  function metric(b, s, e, color) { return h('div', { class: 'metric' }, h('b', { text: b }), h('span', { text: s }), e ? h('em', { text: e, style: { color } }) : null); }
+  function weightChart(ws) {
+    const pts = ws.slice(-20);
+    const W = 320, H = 90, min = Math.min(...pts.map(w => w.kg)) - 0.5, max = Math.max(...pts.map(w => w.kg)) + 0.5;
+    const x = i => 8 + i * (W - 16) / Math.max(1, pts.length - 1), y = v => 8 + (max - v) / (max - min) * (H - 16);
+    const path = pts.map((w, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(w.kg).toFixed(1)).join(' ');
+    const dots = pts.map((w, i) => '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(w.kg).toFixed(1) + '" r="' + (i === pts.length - 1 ? 4 : 2.5) + '" fill="var(--lime)"/>').join('');
+    return h('div', { html: '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Gewichtsverlauf"><path d="' + path + '" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linejoin="round"/>' + dots + '</svg>' });
+  }
+
+  function editProfile(p) {
+    sheet((sh, close) => {
+      sh.append(h('h2', { text: 'Profil bearbeiten' }));
+      const name = h('input', { class: 'inp', value: p.name, maxlength: '24' });
+      const goal = h('select', { class: 'inp' }); Object.entries(GYM.GOALS).forEach(([k, v]) => goal.appendChild(h('option', { value: k, text: v.label }))); goal.value = p.goal;
+      const level = h('select', { class: 'inp' }); Object.entries(GYM.LEVELS).forEach(([k, v]) => level.appendChild(h('option', { value: k, text: v.label }))); level.value = p.level;
+      const sex = h('select', { class: 'inp' }); [['m', 'männlich'], ['w', 'weiblich'], ['d', 'divers']].forEach(([k, v]) => sex.appendChild(h('option', { value: k, text: v }))); sex.value = p.body.sex || 'm';
+      const num = (v, o) => h('input', Object.assign({ class: 'inp', type: 'number', inputmode: 'decimal', value: v == null ? '' : v }, o));
+      const by = num(p.body.birthYear, { min: '1930', max: String(new Date().getFullYear() - 10), placeholder: 'z. B. 1998' });
+      const hgt = num(p.body.height, { min: '120', max: '230', placeholder: 'cm' });
+      const waist = num(p.body.waist, { min: '40', max: '200', placeholder: 'cm (optional)' });
+      const target = num(p.body.target, { min: '30', max: '300', step: '0.1', placeholder: 'kg (optional)' });
+      sh.append(h('div', { class: 'stack' }, h('label', { class: 'fld' }, 'Name', name), h('div', { class: 'grid2' }, h('label', { class: 'fld' }, 'Ziel', goal), h('label', { class: 'fld' }, 'Erfahrung', level)),
+        h('div', { class: 'grid2' }, h('label', { class: 'fld' }, 'Geschlecht', sex), h('label', { class: 'fld' }, 'Geburtsjahr', by)),
+        h('div', { class: 'grid3' }, h('label', { class: 'fld' }, 'Größe', hgt), h('label', { class: 'fld' }, 'Taille', waist), h('label', { class: 'fld' }, 'Zielgewicht', target))));
+      sh.append(h('div', { class: 'acts' }, h('button', { class: 'btn', type: 'button', text: 'Abbrechen', onclick: close }), h('button', { class: 'btn lime', type: 'button', text: 'Speichern', onclick: () => {
+        const goalChanged = goal.value !== p.goal || level.value !== p.level;
+        p.name = name.value.trim() || p.name;
+        p.goal = goal.value; p.level = level.value; p.body.sex = sex.value;
+        const n = (el, lo, hi) => { const v = parseFloat(String(el.value).replace(',', '.')); return v >= lo && v <= hi ? v : null; };
+        p.body.birthYear = n(by, 1930, 2100); p.body.height = n(hgt, 120, 230); p.body.waist = n(waist, 40, 200); p.body.target = n(target, 30, 300);
+        save(); close();
+        if (goalChanged) confirmSheet('Plan an neues Ziel anpassen?', 'Sätze, Wiederholungen, Pausen und Prozent vom Max werden an „' + GYM.GOALS[p.goal].label + '“ angepasst. Deine Übungen bleiben gleich.', 'Anpassen', false, () => { applyGoal(p); toast('Plan angepasst'); rerender(); });
+        rerender();
+      } })));
+    });
+  }
+  function applyGoal(p) {
+    const goal = GYM.GOALS[p.goal], lv = GYM.LEVELS[p.level];
+    for (const d of p.plan.days) for (const e of d.ex) {
+      const lib = L[e.lib]; if (!lib || lib.k === 'run' || lib.k === 'warm') continue;
+      const sch = lib.k === 'abs' ? goal.abs : lib.compound ? goal.c : goal.a;
+      e.sets = Math.max(2, sch.sets + (lib.k === 'abs' ? 0 : lv.setDelta)); e.rest = sch.rest;
+      if (lib.p !== 'abs_static') e.reps = lib.p === 'lunge' ? sch.reps + '/Bein' : sch.reps;
+      if (sch.pct && p.maxes[e.id]) p.pcts[e.id] = Math.round((sch.pct + lv.pctDelta) * 100) / 100;
+    }
+    p.done = {}; save();
+  }
+
+  // ==================================================================
+  // EINRICHTUNG (erstes Profil oder weiteres Profil)
+  // ==================================================================
+  V.onboarding = function (root, canCancel) {
+    const o = { name: '', goal: 'definition', level: 'fortgeschritten', weekdays: [2, 4, 6], body: { sex: 'm', birthYear: null, height: null, weight: null }, template: 'auto' };
+    let step = 0;
+    const isFirst = !Object.keys(st.S.profiles).length;
+    const STEPS = ['name', 'goal', 'level', 'days', 'body', 'plan'];
+    const draw = () => {
+      root.innerHTML = '';
+      const box = h('div', { class: 'onb' });
+      box.appendChild(h('div', { class: 'steps' }, STEPS.map((_, i) => h('i', { class: i <= step ? 'on' : '' }))));
+      const nav = (canNext, nextLabel, onNext) => h('div', { class: 'navbtns' },
+        step > 0 ? h('button', { class: 'btn', type: 'button', text: 'Zurück', onclick: () => { step--; draw(); } }) : (canCancel ? h('button', { class: 'btn', type: 'button', text: 'Abbrechen', onclick: () => GYM.app.go('profile') }) : null),
+        h('button', { class: 'btn lime', type: 'button', disabled: !canNext, text: nextLabel || 'Weiter', onclick: onNext || (() => { step++; draw(); }) }));
+      const s = STEPS[step];
+      if (s === 'name') {
+        const n = h('input', { class: 'inp', value: o.name, placeholder: 'Vorname', maxlength: '24', autocomplete: 'given-name' });
+        const btns = nav(!!o.name.trim());
+        n.addEventListener('input', () => { o.name = n.value; btns.lastChild.disabled = !o.name.trim(); });
+        n.addEventListener('keydown', e => { if (e.key === 'Enter' && o.name.trim()) { step++; draw(); } });
+        box.append(h('img', { src: 'icons/icon-192.png', alt: '', width: '56', height: '56', style: { borderRadius: '16px', marginBottom: '16px' } }),
+          h('h1', { text: isFirst ? 'Willkommen bei Gym Plan' : 'Neues Profil' }), h('p', { class: 'lead', text: 'In einer Minute zu deinem Trainingsplan. Alles bleibt auf diesem Gerät, die App funktioniert komplett ohne Internet.' }),
+          h('label', { class: 'fld' }, 'Wie heißt du?', n), btns);
+        if (isFirst) {
+          const file = h('input', { type: 'file', accept: '.json,application/json', hidden: true });
+          file.addEventListener('change', () => { const f = file.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { st.importBackup(r.result); GYM.app.start(); } catch (e) { toast(e.message); } }; r.readAsText(f); });
+          box.append(file, h('button', { class: 'btn ghost block', type: 'button', style: { marginTop: '18px' }, text: 'Ich habe eine Sicherung – importieren', onclick: () => file.click() }));
+        }
+        setTimeout(() => n.focus(), 50);
+      } else if (s === 'goal') {
+        box.append(h('h1', { text: 'Was ist dein Ziel?' }), h('p', { class: 'lead', text: 'Danach richten sich Wiederholungen, Gewicht und Pausen.' }), optList(Object.entries(GYM.GOALS).map(([k, v]) => [k, v.label, ({ definition: 'mehr Wiederholungen, kürzere Pausen, Ausdauer am Ende', muskel: '8–12 Wiederholungen, mittlere Pausen', kraft: 'schwere Grundübungen, 4–6 Wiederholungen, lange Pausen', fitness: 'ausgewogen, moderat, Intervall-Ausdauer' })[k]]), o.goal, k => { o.goal = k; draw(); }), nav(true));
+      } else if (s === 'level') {
+        box.append(h('h1', { text: 'Wie viel Erfahrung hast du?' }), h('p', { class: 'lead', text: 'Anfänger starten mit Maschinen, weniger Sätzen und vorsichtigen Gewichten.' }), optList(Object.entries(GYM.LEVELS).map(([k, v]) => [k, v.label.split(' (')[0], v.label.match(/\((.*)\)/)[1]]), o.level, k => { o.level = k; draw(); }), nav(true));
+      } else if (s === 'days') {
+        const chips = h('div', { class: 'pickchips week' });
+        [1, 2, 3, 4, 5, 6, 0].forEach(w => chips.appendChild(h('button', { class: 'pick' + (o.weekdays.includes(w) ? ' on' : ''), type: 'button', text: GYM.WD_SHORT[w], onclick: () => { o.weekdays = o.weekdays.includes(w) ? o.weekdays.filter(x => x !== w) : o.weekdays.concat([w]); draw(); } })));
+        const n = o.weekdays.length;
+        box.append(h('h1', { text: 'An welchen Tagen trainierst du?' }), h('p', { class: 'lead', text: '2 bis 5 Tage. Klappt ein Tag mal nicht, verschiebt die App das Training einfach.' }), chips,
+          h('p', { class: 'small ' + (n >= 2 && n <= 5 ? 'muted' : 'lime'), style: { marginTop: '14px' }, text: n < 2 ? 'Mindestens 2 Tage wählen.' : n > 5 ? 'Höchstens 5 Tage – Erholung gehört dazu.' : n + '× pro Woche → ' + ({ 2: '2 Ganzkörper-Einheiten', 3: '3 Ganzkörper-Einheiten (A/B/C)', 4: 'Oberkörper/Unterkörper-Split', 5: 'Push/Pull/Beine + Ober-/Unterkörper' })[n] }),
+          nav(n >= 2 && n <= 5));
+      } else if (s === 'body') {
+        const sex = h('select', { class: 'inp' }); [['m', 'männlich'], ['w', 'weiblich'], ['d', 'divers']].forEach(([k, v]) => sex.appendChild(h('option', { value: k, text: v }))); sex.value = o.body.sex;
+        const num = (k, ph, lo, hi) => { const e = h('input', { class: 'inp', type: 'number', inputmode: 'decimal', placeholder: ph, value: o.body[k] || '' }); e.addEventListener('input', () => { const v = parseFloat(String(e.value).replace(',', '.')); o.body[k] = v >= lo && v <= hi ? v : null; }); return e; };
+        sex.addEventListener('change', () => { o.body.sex = sex.value; });
+        box.append(h('h1', { text: 'Ein paar Körperdaten' }), h('p', { class: 'lead', text: 'Optional. Damit schätzt die App passende Startgewichte und zeigt im Profil BMI und Fortschritt.' }),
+          h('div', { class: 'stack' }, h('div', { class: 'grid2' }, h('label', { class: 'fld' }, 'Geschlecht', sex), h('label', { class: 'fld' }, 'Geburtsjahr', num('birthYear', 'z. B. 1998', 1930, 2100))),
+            h('div', { class: 'grid2' }, h('label', { class: 'fld' }, 'Größe (cm)', num('height', '180', 120, 230)), h('label', { class: 'fld' }, 'Gewicht (kg)', num('weight', '80', 30, 300)))), nav(true));
+      } else if (s === 'plan') {
+        const opts = [['auto', 'Plan automatisch erstellen', 'Passend zu Ziel, Erfahrung und ' + o.weekdays.length + ' Tagen – Startgewichte werden geschätzt']];
+        opts.push(['kevin', 'Bewährten 3-Tage-Plan übernehmen', 'Ganzkörper A/B/C für Definition (Push · Pull · Kraft) mit Laufband – der Plan aus Version 1']);
+        box.append(h('h1', { text: 'Dein Plan' }), h('p', { class: 'lead', text: 'Alles lässt sich später unter „Plan“ ändern: Übungen tauschen, hinzufügen, Gewichte anpassen.' }), optList(opts, o.template, k => { o.template = k; draw(); }),
+          nav(true, 'Los geht’s', () => {
+            const p = GYM.createProfile(o);
+            st.addProfile(p); curDayId = null;
+            GYM.app.start();
+            toast('Profil erstellt – viel Erfolg, ' + p.name + '!');
+          }));
+      }
+      root.appendChild(box);
+    };
+    draw();
+  };
+  function optList(items, cur, pick) {
+    const l = h('div', { class: 'optlist' });
+    items.forEach(([k, t, d]) => l.appendChild(h('button', { class: 'opt' + (k === cur ? ' on' : ''), type: 'button', 'aria-pressed': k === cur ? 'true' : 'false', onclick: () => pick(k) }, h('span', { class: 'dot' }), h('div', {}, h('b', { text: t }), d ? h('span', { text: d }) : null))));
+    return l;
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+// ---- js/app.js ----
+// app.js – Start, Navigation, Kopfzeile, Erinnerungen, Offline-Speicher
+(function (G) {
+  'use strict';
+  const GYM = G.GYM;
+  GYM.VERSION = '2.0.1';
+  const { h, $, toast } = GYM.ui;
+  const st = GYM.store;
+  let view = 'training';
+
+  const NAV = [
+    ['training', 'Training', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M4 9v6M20 9v6M6.5 12h11"/></svg>'],
+    ['plan', 'Plan', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>'],
+    ['calendar', 'Kalender', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="3"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/></svg>'],
+    ['history', 'Verlauf', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>'],
+    ['profile', 'Profil', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'],
+  ];
+
+  function buildChrome() {
+    const nav = $('#navIn');
+    nav.innerHTML = '';
+    NAV.forEach(([k, l, svg]) => nav.appendChild(h('button', { type: 'button', 'data-view': k, html: svg + '<span>' + l + '</span>', onclick: () => go(k) })));
+  }
+  function header() {
+    const p = st.P();
+    const sub = $('#headSub');
+    const next = GYM.nextDay(p);
+    const d = GYM.nextPlannedDate(p, GYM.today());
+    const diff = d ? GYM.diffDays(GYM.today(), d) : null;
+    sub.textContent = p.weekdays.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(w => GYM.WD_SHORT[w]).join(' · ') + (next && d !== null ? ' — nächstes: ' + next.name + (diff === 0 ? ' heute' : diff === 1 ? ' morgen' : ' am ' + GYM.WD_SHORT[GYM.weekdayOf(d)]) : '');
+    const who = $('#who');
+    who.innerHTML = '';
+    who.append(h('div', { class: 'av', text: p.name.slice(0, 1).toUpperCase() }), h('span', { text: p.name }));
+  }
+  function render() {
+    const p = st.P();
+    if (!p) return onboarding();
+    document.body.classList.remove('onboarding');
+    header();
+    document.querySelectorAll('#navIn button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
+    const main = $('#main');
+    const y = window.scrollY;
+    main.innerHTML = '';
+    const sec = h('section', { class: 'view on' });
+    main.appendChild(sec);
+    try { GYM.views[view](sec); } catch (e) { console.error(e); sec.appendChild(h('div', { class: 'empty', text: 'Fehler beim Anzeigen: ' + e.message })); }
+    window.scrollTo(0, y);
+  }
+  function go(v) { view = v; st.S.ui.view = v; st.save(); render(); window.scrollTo(0, 0); }
+  function onboarding(canCancel) {
+    document.body.classList.add('onboarding');
+    const main = $('#main');
+    main.innerHTML = '';
+    window.scrollTo(0, 0);
+    GYM.views.onboarding(main, !!canCancel);
+  }
+  function start() { view = 'training'; buildChrome(); render(); checkReminder(); }
+
+  // ------------------------------------------------------------------
+  // Erinnerungen: in der App (beim Öffnen und solange offen) + Hintergrundprüfung, wo Android es erlaubt
+  // ------------------------------------------------------------------
+  function checkReminder() {
+    const p = st.P();
+    if (!p || !p.reminder.enabled || !('Notification' in window) || Notification.permission !== 'granted') return;
+    const t = GYM.today();
+    const s = GYM.todayStatus(p, t);
+    const now = new Date();
+    const [hh, mm] = p.reminder.time.split(':').map(Number);
+    if (s.state !== 'due' || st.S.ui.notified === t || now.getHours() * 60 + now.getMinutes() < hh * 60 + mm) return;
+    st.S.ui.notified = t; st.save();
+    const next = GYM.nextDay(p);
+    const body = (next ? next.name + ' steht an' : 'Training steht an') + ' – los geht’s!';
+    if (navigator.serviceWorker && navigator.serviceWorker.ready) navigator.serviceWorker.ready.then(r => r.showNotification('Heute ist Training', { body, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'training' })).catch(() => {});
+  }
+  async function registerReminder() {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      if ('periodicSync' in reg) await reg.periodicSync.register('training-reminder', { minInterval: 60 * 60 * 1000 });
+    } catch (e) { /* nicht überall verfügbar */ }
+    checkReminder();
+  }
+
+  // Installation: Android/Chrome liefert einen eigenen Installieren-Dialog
+  GYM.install = {
+    prompt: null,
+    standalone: (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true,
+    async run() {
+      if (!this.prompt) return false;
+      this.prompt.prompt();
+      const r = await this.prompt.userChoice.catch(() => null);
+      this.prompt = null;
+      if (r && r.outcome === 'accepted') { this.standalone = true; toast('App wird installiert'); }
+      render();
+      return true;
+    },
+  };
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); GYM.install.prompt = e; if (st.P()) render(); });
+  window.addEventListener('appinstalled', () => { GYM.install.standalone = true; GYM.install.prompt = null; if (st.P()) render(); });
+
+  function init() {
+    if (st.S.ui.view) view = st.S.ui.view;
+    buildChrome();
+    $('#who').addEventListener('click', () => go('profile'));
+    $('#timerSkip').addEventListener('click', () => GYM.ui.stopTimer());
+    $('#timerAdd').addEventListener('click', () => GYM.ui.addTimer(30));
+    if (!st.P()) onboarding(); else render();
+    setInterval(checkReminder, 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && st.P()) { checkReminder(); if (view === 'training') render(); } });
+    if (!st.persistent) toast('Vorschau-Modus: Daten werden nicht dauerhaft gespeichert');
+    if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) {
+      navigator.serviceWorker.register('sw.js').then(() => { if ('Notification' in window && Notification.permission === 'granted') registerReminder(); }).catch(() => {});
+      // neue Version verfügbar → still aktualisieren beim nächsten Öffnen
+      navigator.serviceWorker.addEventListener('controllerchange', () => { if (!GYM._reloaded) { GYM._reloaded = true; } });
+    }
+  }
+
+  GYM.app = { render, go, start, onboarding, registerReminder };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+</script>
+</body>
+</html>
